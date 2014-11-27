@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <style media="myfont" type="text/css">
+      @font-face {
+        font-family: Sans-Serif;
+        font-weight: 400;
+      }
+    </style>
+  </head>
+  <body bgcolor="#000000">
+    <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="js/novella.js"></script>
+    <font color="#FFFFFF">
+      <canvas id="surface" width="800" height="600"></canvas>
+    </font>
+    <font color="#FF0000">
+      <p>
+        Give the game some time for loading, it can get
+        stuck occasionally.<br />
+        If you think the game has been stuck loading for
+        too long, refresh.
+        <p>
+      </font>
+    <script>
+      ld26.core.connect();
+      ld26.core.init();
+    </script>
+  </body>
