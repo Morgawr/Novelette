@@ -48,7 +48,7 @@
       :next-frame
       (fn [state]
         (let [screen-list (:screen-list state)
-              mmenu (novelette.screens.storyscreen/init ctx canvas)
+              mmenu (novelette.screens.storyscreen/init ctx canvas) ; TODO - pass screen to load
               new-list (gscreen/replace-screen mmenu screen-list)]
           (assoc state :screen-list new-list))))))
 
@@ -98,12 +98,6 @@
      :else
        (assoc screen :percentage (percentage-loaded images sounds)))))
 
-(defn maybe-update
-  [screen on-top elapsed-time]
-  (if on-top
-    (update screen elapsed-time)
-    screen))
-
 (defn draw
   [screen]
   (r/draw-text-centered (:context screen) [400 250]
@@ -112,12 +106,6 @@
                         (str (:percentage screen) "%") "25px" "white")
   screen)
 
-(defn maybe-draw
-  [screen on-top]
-  (if on-top
-    (draw screen)
-    screen))
-
 (defn init
   [ctx canvas]
   (generate-audio-list)
@@ -125,8 +113,8 @@
   (-> gscreen/BASE-SCREEN
       (into {
              :id "LoadingScreen"
-             :update maybe-update
-             :render maybe-draw
+             :update (fn [screen _ elapsed-time] (update screen elapsed-time))
+             :render (fn [screen _] (draw screen))
              :handle-input maybe-handle-input
              :next-frame nil
              :context ctx

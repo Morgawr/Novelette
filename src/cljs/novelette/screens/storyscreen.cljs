@@ -2,7 +2,7 @@
   (:require [novelette.render :as r]
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
-            [novelette.screen.dialoguescreen]))
+            novelette.screens.dialoguescreen))
 
 (def MESSAGES [])
 
@@ -14,7 +14,7 @@
       (assoc screen
         :next-frame (fn [state]
                       (let [screen-list (:screen-list state)
-                            dialog (novelette.screen.dialoguescreen/init ctx canvas nil MESSAGES)
+                            dialog (novelette.screens.dialoguescreen/init ctx canvas nil MESSAGES)
                             new-list (gscreen/push-screen dialog screen-list)]
                         (assoc state :screen-list new-list)))))
     screen))

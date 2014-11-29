@@ -1,4 +1,4 @@
-(ns novelette.screen.dialoguescreen
+(ns novelette.screens.dialoguescreen
   (:require [novelette.render :as r]
             [novelette.screen :as gscreen]))
 
