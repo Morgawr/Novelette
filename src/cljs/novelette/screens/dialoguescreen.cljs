@@ -1,6 +1,6 @@
-(ns novella.screen.dialoguescreen
-  (:require [novella.render :as r]
-            [novella.screen :as gscreen]))
+(ns novelette.screen.dialoguescreen
+  (:require [novelette.render :as r]
+            [novelette.screen :as gscreen]))
 
 (defn printed-full-message?
   [screen]

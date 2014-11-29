@@ -1,4 +1,4 @@
-(ns novella.sound
+(ns novelette.sound
   (:require [goog.dom :as dom]))
 
 (def SOUND-MAP (atom {}))

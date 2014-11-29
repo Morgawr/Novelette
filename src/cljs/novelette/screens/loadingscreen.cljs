@@ -1,8 +1,8 @@
-(ns novella.screens.loadingscreen
-  (:require [novella.render :as r]
-            [novella.screen :as gscreen]
-            [novella.sound :as gsound]
-            [novella.screens.storyscreen]))
+(ns novelette.screens.loadingscreen
+  (:require [novelette.render :as r]
+            [novelette.screen :as gscreen]
+            [novelette.sound :as gsound]
+            [novelette.screens.storyscreen]))
 
 ; This is the loading screen, it is the first screen that we load in the game
 ; and its task is to load all the resources (images, sounds, etc etc) of the
@@ -48,7 +48,7 @@
       :next-frame
       (fn [state]
         (let [screen-list (:screen-list state)
-              mmenu (novella.screens.storyscreen/init ctx canvas)
+              mmenu (novelette.screens.storyscreen/init ctx canvas)
               new-list (gscreen/replace-screen mmenu screen-list)]
           (assoc state :screen-list new-list))))))
 

@@ -1,4 +1,4 @@
-(ns novella.render
+(ns novelette.render
   (:require [goog.dom :as dom]))
 
 (defn clear-context

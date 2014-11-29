@@ -1,7 +1,7 @@
-(ns novella.screen
+(ns novelette.screen
   (:require [goog.dom :as dom]
-            [novella.input]
-            [novella.render]))
+            [novelette.input]
+            [novelette.render]))
 
 ; This is the screen, a screen is the base data structure that contains
 ; all the data for updating, rendering and handling a single state instance
@@ -49,7 +49,7 @@
         render (:render screen)
         input (:handle-input screen)]
     (-> screen
-        (input on-top @novella.input/MOUSE-STATE)
+        (input on-top @novelette.input/MOUSE-STATE)
         (update on-top elapsed-time)
         (render on-top))))
 
@@ -109,7 +109,7 @@
   (assoc state :curr-time curr-time))
 
 (defn clear-screen [state]
-  (novella.render/fill-clear (:canvas state) (:context state) "black")
+  (novelette.render/fill-clear (:canvas state) (:context state) "black")
   state)
 
 (defn main-game-loop [state]
@@ -122,4 +122,4 @@
         (update-time curr-time)
         (schedule-next-frame)
         ((fn [s] ((get-animation-method) #(main-game-loop s)))))
-    (novella.input/mouse-declick)))
+    (novelette.input/mouse-declick)))

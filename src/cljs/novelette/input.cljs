@@ -1,4 +1,4 @@
-(ns novella.input)
+(ns novelette.input)
 
 (def MOUSE-STATE (atom {:x 0
                         :y 0
