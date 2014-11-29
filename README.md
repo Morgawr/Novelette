@@ -1,4 +1,4 @@
-# novella-engine
+# Novella
 
 A ClojureScript engine used to develop Visual Novels and graphic storytelling on
 the browser and node-webkit.
