@@ -13,7 +13,6 @@
                    render ; Function to render on screen
                    deinit ; Function to destroy screen
                    images ; list of images to be drawn on screen
-                   ; TODO - have the images with positions properly
                    canvas ; canvas of the game
                    context ; context of the canvas
                    next-frame ; What to do on the next game-loop

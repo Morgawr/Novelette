@@ -11,6 +11,7 @@
 
 (def IMAGE-MAP (atom {}))
 
+; TODO - Add support for multiple fonts
 (def FONT "Arial")
 
 (declare load-image)
@@ -33,6 +34,10 @@
     (.drawImage ctx image
                 (first pos)
                 (second pos))))
+
+(defn draw-sprite
+  [ctx {:keys [id position]}]
+  (draw-image ctx position id))
 
 (defn fill-clear
   [canvas ctx color]
