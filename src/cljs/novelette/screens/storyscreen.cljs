@@ -59,7 +59,9 @@
 
 (defn handle-input
   [screen on-top mouse]
-  (assoc screen :mouse mouse))
+  (if on-top
+    (assoc screen :mouse mouse)
+    screen))
 
 (defn init
   [ctx canvas gamestate]
@@ -72,6 +74,6 @@
     :context ctx
     :canvas canvas
     :deinit (fn [s] nil)
-    :first-time true
     :state gamestate
+    :storyteller nil
     }))
