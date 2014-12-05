@@ -13,9 +13,9 @@
 (defrecord State [scrollback ; Complete history of events for scrollback purposes, as a stack.
                   current ; Current event being interpreted by the engine.
                   scrollfront ; Stack of events yet to be interpreted.
-                  spritemap ; Map of sprites currently displayed on screen.
+                  spriteset ; Set of sprite id currently displayed on screen.
+                  sprites ; Map of sprites globally defined on screen.
                   backgrounds ; Map of sprites currently in use as backgrounds.
-                  bgm ; Current bgm being played.
                   points ; Map of points that the player obtained during the game
                   cps ; characters per second
                   ; TODO - add a "seen" map with all the dialogue options already seen
@@ -23,7 +23,7 @@
                   ; TODO - add map of in-game settings.
                   ])
 
-(def BASE-STATE (State. '() nil '() {} {} nil {} 0))
+(def BASE-STATE (State. '() nil '() #{} {} {} {} 0))
 
 ; A sprite is different from an image, an image is a texture loaded into the
 ; engine's renderer with an id assigned as a reference. A sprite is an instance
@@ -34,26 +34,25 @@
                    ; TODO - add scale and rotation
                    ])
 
+(defn set-storyteller
+  [{:keys [storyteller scrollfront] :as screen}]
+  (if (nil? storyteller)
+    (assoc screen :storyteller (s/StoryTeller. scrollfront @s/RT-HOOKS 0))
+    screen))
+
 (defn update
   [screen on-top elapsed-time]
+  (.log js/console (:timer (:storyteller screen)))
   (if on-top
     (-> screen
+        (set-storyteller)
         (s/update elapsed-time))
     screen))
-  ;(if (:first-time screen)
-  ;  (let [ctx (:context screen)
-  ;        canvas (:canvas screen)]
-  ;    (assoc screen
-  ;      :next-frame (fn [state]
-  ;                    (let [screen-list (:screen-list state)
-  ;                          dialog (novelette.screens.dialoguescreen/init ctx canvas nil MESSAGES)
-  ;                          new-list (gscreen/push-screen dialog screen-list)]
-  ;                      (assoc state :screen-list new-list)))))
 
 (defn render
   [{:keys [state ctx] :as screen} on-top]
   (let [bgs (utils/sort-z-index (:backgrounds state))
-        sps (utils/sort-z-index (:spritemap state))]
+        sps (utils/sort-z-index (:spriteset state))]
     (doseq [s bgs]
       ((comp r/draw-sprite second) s))
     (when on-top

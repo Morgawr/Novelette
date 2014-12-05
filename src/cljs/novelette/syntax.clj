@@ -29,7 +29,9 @@
 
 (defmacro speak*
   [name text color] ; TODO - add support for font
-  `(let [result#  { :name ~name :color ~color }
+  `(let [result#  { :name ~name
+                    :color ~color
+                    :type :speech}
          msgs# (parse-format ~text)]
      (assoc result#
        :messages (first msgs#)
@@ -68,12 +70,12 @@
      (apply merge-with
             (fn [a# b#]
               (assoc a# (first (keys b#)) (first (vals b#))))
-            {:type :explicit :text text#}
+            {:type :explicit-choice :text text#}
             args#)))
 
 (defmacro choice-implicit*
   [args]
-  `{:type :implicit
+  `{:type :implicit-choice
     :options (map :options ~args)})
 
 (defn choice
@@ -86,3 +88,57 @@
   [name & body]
     `(def ~name { :name ~(str name)
                   :body [~@body] }))
+
+(defmacro clear-sprites
+  "Removes all sprites from the screen."
+  []
+  `{:type :function
+    :hook :clear-sprites})
+
+(defmacro sprite
+  "Adds a sprite on screen."
+  [id]
+  `{:type :function
+    :hook :add-sprite
+    :params [~id]})
+
+(defmacro no-sprite
+  "Removes a sprite from the screen."
+  [id]
+   `{:type :function
+     :hook :remove-sprite
+     :params [~id]})
+
+(defmacro teleport-sprite
+  "Teleports a sprite at a given position."
+  [id position]
+  `{:type :function
+    :hook :teleport-sprite
+    :params [~id ~position]})
+
+(defmacro move-sprite
+  "Moves a sprite at a given position in a given time (milliseconds)."
+  [id position duration]
+  `{:type :function
+    :hook :move-sprite
+    :params [~id ~position ~duration]})
+
+(defmacro bgm
+  "Starts playing new bgm."
+  [id]
+  `{:type :function
+    :hook :play-bgm
+    :params [~id]})
+
+(defmacro no-bgm
+  "Stops playing the bgm."
+  []
+  `{:type :function
+    :hook :stop-bgm})
+
+(defmacro declare-sprite
+  "Declares a sprite bound to the current screen"
+  [id image-id position z-index]
+  `{:type :function
+    :hook :decl-sprite
+    :params [~id ~image-id ~position ~z-index]})

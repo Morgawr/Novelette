@@ -3,7 +3,7 @@
 
 (def SOUND-MAP (atom {}))
 
-(def BGM (atom []))
+(def BGM (atom {}))
 
 (declare load-sound)
 
@@ -25,28 +25,35 @@
   (. sound pause))
 
 (defn play-audio
-  [sound]
+  [sound loop?]
   (set! (. sound -currentTime) 0)
-  (set! (. sound -loop) true)
+  (set! (. sound -loop) loop?)
   (. sound play))
+
+(defn stop-bgm
+  []
+  (let [sym (first (keys @BGM))
+        bgm (@BGM sym)]
+    (when sym
+      (stop-audio bgm))
+    (reset! BGM {})))
 
 (defn play-bgm
   [sym]
-  (let [curr-sym (second @BGM)
-        sound1 (first @BGM)
+  (let [curr-sym (first (keys @BGM))
+        sound1 (@BGM curr-sym)
         sound2 (sym @SOUND-MAP)]
     (cond
      (nil? curr-sym)
        (do
-         (play-audio sound2)
-         (reset! BGM [sound2 sym]))
+         (play-audio sound2 true)
+         (reset! BGM {sym sound2}))
      (= curr-sym sym)
        nil
      :else
-       (do
-         (stop-audio sound1)
-         (play-audio sound2)
-         (reset! BGM [sound2 sym])))))
+         (do
+           (stop-bgm)
+           (play-bgm sym)))))
 
 (defn screen-start-bgm
   [screen]

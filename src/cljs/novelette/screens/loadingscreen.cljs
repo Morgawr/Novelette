@@ -48,7 +48,8 @@
       :next-frame
       (fn [state]
         (let [screen-list (:screen-list state)
-              mmenu (novelette.screens.storyscreen/init ctx canvas {}) ; TODO - pass screen to load
+              mmenu (novelette.screens.storyscreen/init ctx canvas
+                                                        novelette.screens.storyscreen/BASE-STATE) ; TODO - pass screen to load
               new-list (gscreen/replace-screen mmenu screen-list)]
           (assoc state :screen-list new-list))))))
 
