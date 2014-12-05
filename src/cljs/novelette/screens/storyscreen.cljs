@@ -3,6 +3,7 @@
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
             novelette.screens.dialoguescreen
+            [novelette.storyteller :as s]
             [novelette.utils :as utils]))
 
 ; This is the storytelling state of the game. It is an object containing the whole set of
@@ -35,7 +36,10 @@
 
 (defn update
   [screen on-top elapsed-time]
-  screen)
+  (if on-top
+    (-> screen
+        (s/update elapsed-time))
+    screen))
   ;(if (:first-time screen)
   ;  (let [ctx (:context screen)
   ;        canvas (:canvas screen)]

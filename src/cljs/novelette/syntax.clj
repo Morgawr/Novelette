@@ -43,7 +43,7 @@
 (defmacro defspeaker
   [symbol name color] ; TODO - add support for font
   `(def ~symbol
-     (speaker name color)))
+     (speaker ~name ~color)))
 
 (defn option
   [id jump & args]
@@ -81,3 +81,8 @@
   (if (string? (first args))
     (choice-explicit* (first args) (rest args))
     (choice-implicit* args)))
+
+(defmacro defscene
+  [name & body]
+    `(def ~name { :name ~(str name)
+                  :body [~@body] }))
