@@ -22,6 +22,7 @@
                   ui-img ; UI image to show
                   input-state ; State of the input for the current frame.
                   cursor ; Image of glyph used to advance text
+                  cursor-delta ; Delta to make the cursor float, just calculate % 4
                   ; TODO - add a "seen" map with all the dialogue options already seen
                   ;        to facilitate skipping of text.
                   ])
@@ -35,7 +36,7 @@
                    ; TODO - add scale and rotation
                    ])
 
-(def BASE-STATE (State. '() '() #{} {} '() {} 0 true false (Sprite. :dialogue-ui [0 0] 0) {} :cursor))
+(def BASE-STATE (State. '() '() #{} {} '() {} 0 true false (Sprite. :dialogue-ui [0 0] 0) {} :cursor 0))
 
 (defn advance-step
   [screen]
@@ -57,10 +58,15 @@
   (if (:done? (:storyteller screen))
     (assoc-in screen [:state :next-step?] true)
     screen))
-  ;(cond
-  ; ((comp :done? :storyteller) screen)
-  ;  (assoc-in screen [:state :next-step] true)
-  ;  screen))
+
+(defn update-cursor
+  [{:keys [state] :as screen} elapsed-time]
+  (let [cursor-delta (:cursor-delta state)]
+    (if (> (+ cursor-delta elapsed-time) 800)
+      (assoc-in screen [:state :cursor-delta]
+                (+ cursor-delta elapsed-time -800))
+      (assoc-in screen [:state :cursor-delta]
+                (+ cursor-delta elapsed-time)))))
 
 (defn update
   [screen on-top elapsed-time]
@@ -68,8 +74,25 @@
     (-> screen
         (advance-step)
         (s/update elapsed-time)
+        (update-cursor elapsed-time)
         (evaluate))
     screen))
+
+(defn render-text
+  [{:keys [state storyteller context] :as screen}]
+  (let [{:keys [cursor cursor-delta]} state
+        offset (cond (< 0 cursor-delta 101) -2
+                     (or (< 100 cursor-delta 201)
+                         (< 700 cursor-delta 801)) -1
+                     (or (< 200 cursor-delta 301)
+                         (< 600 cursor-delta 701)) 0
+                     (or (< 300 cursor-delta 401)
+                         (< 500 cursor-delta 601)) 1
+                     (< 400 cursor-delta 501) 2
+                     :else 0)]
+    (r/draw-text-with-cursor context [15 320]
+                             ((comp :display-message :state) storyteller)
+                             "bold" "white" cursor offset)))
 
 (defn render
   [{:keys [state context] :as screen} on-top]
@@ -83,11 +106,7 @@
       (when (:show-ui? state)
         (r/draw-sprite context (:ui-img state)))
       (when ((comp :display-message :state :storyteller) screen)
-        (r/draw-text context
-                     [15 320]
-                     ((comp :display-message :state :storyteller) screen)
-                     "bold"
-                     "white"))))
+        (render-text screen))))
   screen)
 
 (defn handle-input

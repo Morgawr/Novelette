@@ -55,6 +55,13 @@
              (first pos)
              (second pos)))
 
+(defn draw-text-with-cursor
+  [ctx pos text attr color cursor-id cursor-y-offset]
+  (draw-text ctx pos text attr color)
+  (let [width (.-width (.measureText ctx text))
+        [x y] pos]
+    (draw-image ctx [(+ x width 2) (+ y 14 cursor-y-offset)] cursor-id)))
+
 (defn draw-text-centered
   [ctx pos text attr color]
   (set! (. ctx -font) (str attr " " FONT))
