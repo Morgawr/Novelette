@@ -9,7 +9,8 @@
 ; and its task is to load all the resources (images, sounds, etc etc) of the
 ; game before we can begin playing.
 (def image-list {:bgtest "img/background.png"
-                 :bgtest2 "img/background2.png"})
+                 :bgtest2 "img/background2.png"
+                 :dialogue-ui "img/dialogbg.png"})
 
 (def audio-list {:bgm-beginning "sound/beginning"})
 
@@ -44,8 +45,11 @@
 
 (syntax/defscene scene1
   (syntax/background :bgtest)
-  (syntax/bgm :bgm-beginning)
-  (syntax/background :bgtest2))
+  ;(syntax/bgm :bgm-beginning)
+  (syntax/background :bgtest2)
+  (syntax/wait 1000)
+  (syntax/set-ui :dialogue-ui [0 300])
+  (syntax/show-ui))
 
 (def start-game
   (into novelette.screens.storyscreen/BASE-STATE

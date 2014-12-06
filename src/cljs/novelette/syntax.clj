@@ -164,3 +164,31 @@
   `{:type :function
     :hook :pop-background
     :params []})
+
+(defmacro show-ui
+  "Shows UI on screen."
+  []
+  `{:type :function
+    :hook :show-ui
+    :params []})
+
+(defmacro hide-ui
+  "Hides UI on screen."
+  []
+  `{:type :function
+    :hook :hide-ui
+    :params []})
+
+(defmacro set-ui
+  "Set the UI image to be used."
+  [id pos]
+  `{:type :function
+    :hook :set-ui
+    :params [~id ~pos]})
+
+(defmacro wait
+  "Wait for a given amount of millisecnds"
+  [msec]
+  `{:type :function
+    :hook :wait
+    :params [~msec]})

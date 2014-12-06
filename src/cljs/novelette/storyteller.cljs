@@ -20,48 +20,53 @@
 ; state to the storyteller and keeps going
 
 (defn init-new
-  [storyteller new? step]
+  [storyteller new?]
   (if new?
-    (assoc storyteller :state {} :first? false :done? false)
+    (assoc storyteller :state {} :done? false)
     storyteller))
 
+(defn update-dialogue
+  [state {:keys [state current-state] :as storyteller}]
+  [state (assoc-in storyteller [:state :display-message]
+                   (apply str (:messages current-state)))])
+
 (defn parse-event
-  [storyteller state step]
-  (cond
-   (= :function (:type step))
-     (let [hooks (:runtime-hooks storyteller)
-           fn-id (:hook step)
-           params (:params step)]
-       (apply (fn-id hooks) state storyteller params))
-   (= :implicit-choice (:type step))
-     [state storyteller]
-   (= :explicit-choice (:type step))
-     [state storyteller]
-   (= :speech (:type step))
-     [state storyteller]
-   (= :dummy (:type step))
-     (do
-       (.log js/console "Dummy step")
-       [state storyteller])
-   :else
-     (do
-       (.log js/console "Storyteller: ")
-       (.log js/console (pr-str storyteller))
-       (.log js/console "State: ")
-       (.log js/console (pr-str state))
-       (throw (js/Error. (str "Error: unknown type -> " (pr-str (:type step))))))))
+  [storyteller state]
+  (let [step (:current-state storyteller)]
+    (cond
+     (= :function (:type step))
+       (let [hooks (:runtime-hooks storyteller)
+             fn-id (:hook step)
+             params (:params step)]
+         (apply (fn-id hooks) state storyteller params))
+     (= :implicit-choice (:type step))
+       [state storyteller]
+     (= :explicit-choice (:type step))
+       [state storyteller]
+     (= :speech (:type step))
+       (update-dialogue state storyteller)
+     (= :dummy (:type step))
+       (do
+         (.log js/console "Dummy step")
+         [state storyteller])
+     :else
+       (do
+         (.log js/console "Storyteller: ")
+         (.log js/console (pr-str storyteller))
+         (.log js/console "State: ")
+         (.log js/console (pr-str state))
+         (throw (js/Error. (str "Error: unknown type -> " (pr-str (:type step)))))))))
 
 (defn update
   [{:keys [storyteller state] :as screen} elapsed-time]
   (if (not (:done? storyteller))
-    (let [step (:current-state storyteller)
-          new? (:first? storyteller)
+    (let [new? (:first? storyteller)
           temp-storyteller (-> storyteller
-                               (init-new new? step)
+                               (init-new new?)
                                (update-in [:timer] + elapsed-time))
-          [new-state new-storyteller] (parse-event temp-storyteller state step)]
+          [new-state new-storyteller] (parse-event temp-storyteller state)]
     (assoc screen
-      :storyteller new-storyteller
+      :storyteller (assoc new-storyteller :first? false)
       :state new-state))
     screen))
 
@@ -95,6 +100,30 @@
   [(assoc state :backgrounds '())
    (assoc storyteller :done? true)])
 
+(defn show-ui
+  [state storyteller]
+  [(assoc state :show-ui? true)
+   (assoc storyteller :done? true)])
+
+(defn hide-ui
+  [state storyteller]
+  [(assoc state :show-ui? false)
+   (assoc storyteller :done? true)])
+
+(defn set-ui
+  [state storyteller id pos]
+  [(-> state
+       (assoc-in [:ui-img :id] id)
+       (assoc-in [:ui-img :position] pos))
+   (assoc storyteller :done? true)])
+
+(defn wait
+  [state storyteller msec]
+  (if (> msec (:timer storyteller))
+    [state storyteller]
+    [state
+     (assoc storyteller :done? true)]))
+
 (def RT-HOOKS (atom {
                      :play-bgm (fn [state storyteller id]
                                  (s/play-bgm id)
@@ -108,4 +137,8 @@
                      :pop-background pop-background
                      :push-background push-background
                      :clear-backgrounds clear-backgrounds
+                     :show-ui show-ui
+                     :hide-ui hide-ui
+                     :set-ui set-ui
+                     :wait wait
                      }))

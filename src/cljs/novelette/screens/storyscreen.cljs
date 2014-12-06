@@ -17,13 +17,13 @@
                   backgrounds ; Stack of sprites currently in use as backgrounds.
                   points ; Map of points that the player obtained during the game
                   cps ; characters per second
-                  next-step ; Boolean, whether or not to advance to next step for storytelling
+                  next-step? ; Whether or not to advance to next step for storytelling
+                  show-ui? ; Whether or not we show the game UI on screen.
+                  ui-img ; UI image to show
                   ; TODO - add a "seen" map with all the dialogue options already seen
                   ;        to facilitate skipping of text.
                   ; TODO - add map of in-game settings.
                   ])
-
-(def BASE-STATE (State. '() '() #{} {} '() {} 0 true))
 
 ; A sprite is different from an image, an image is a texture loaded into the
 ; engine's renderer with an id assigned as a reference. A sprite is an instance
@@ -34,15 +34,17 @@
                    ; TODO - add scale and rotation
                    ])
 
+(def BASE-STATE (State. '() '() #{} {} '() {} 0 true false (Sprite. :dialogue-ui [0 0] 0)))
+
 (defn advance-step
   [screen]
-  (let [next-step ((comp :next-step :state) screen)
+  (let [next-step? ((comp :next-step? :state) screen)
         scroll-front ((comp :scrollfront :state) screen)]
-    (if (and next-step
+    (if (and next-step?
              (not (empty? scroll-front)))
       (as-> screen s
             (update-in s [:state :scrollback] conj ((comp :current-state :storyteller) s))
-            (assoc-in s [:state :next-step] false)
+            (assoc-in s [:state :next-step?] false)
             (assoc-in s [:storyteller :current-state] ((comp first :scrollfront :state) s))
             (assoc-in s [:storyteller :done?] false)
             (assoc-in s [:storyteller :first?] true)
@@ -51,20 +53,21 @@
 
 (defn set-storyteller
   [{:keys [state] :as screen}]
-  (let [{:keys [storyteller scrollfront]} state]
+  (let [{:keys [scrollfront]} state
+        {:keys [storyteller]} screen]
     (if (nil? storyteller)
       (assoc-in screen [:storyteller] (s/StoryTeller. @s/RT-HOOKS {:type :dummy} 0 {} false true))
       screen)))
 
-(defn step-storyteller
-  [screen elapsed-time]
-  (s/update screen elapsed-time))
-
 (defn evaluate
   [screen]
-  (if ((comp :done? :storyteller) screen)
-    (assoc-in screen [:state :next-step] true)
+  (if (:done? (:storyteller screen))
+    (assoc-in screen [:state :next-step?] true)
     screen))
+  ;(cond
+  ; ((comp :done? :storyteller) screen)
+  ;  (assoc-in screen [:state :next-step] true)
+  ;  screen))
 
 (defn update
   [screen on-top elapsed-time]
@@ -72,7 +75,7 @@
     (-> screen
         (set-storyteller)
         (advance-step)
-        (step-storyteller elapsed-time)
+        (s/update elapsed-time)
         (evaluate))
     screen))
 
@@ -84,7 +87,9 @@
       (r/draw-image context [0 0] s))
     (when on-top
       (doseq [s sps]
-        ((comp r/draw-sprite second) s))))
+        ((comp r/draw-sprite second) context s))
+      (when (:show-ui? state)
+        (r/draw-sprite context (:ui-img state)))))
   screen)
 
 (defn handle-input
