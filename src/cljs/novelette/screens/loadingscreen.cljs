@@ -10,7 +10,9 @@
 ; game before we can begin playing.
 (def image-list {:bgtest "img/background.png"
                  :bgtest2 "img/background2.png"
-                 :dialogue-ui "img/dialogbg.png"})
+                 :dialogue-ui "img/dialogbg.png"
+                 :bestgirl "img/bestgirl.png"
+                 :cursor "img/cursor.png"})
 
 (def audio-list {:bgm-beginning "sound/beginning"})
 
@@ -43,17 +45,54 @@
     (handle-input screen mouse)
     screen))
 
+; ------------------------------- TESTING STUFF --------------------------
+
+(syntax/defspeaker morg "Morgawr" :red)
+(syntax/defspeaker horo "Horo" :blue)
+
+;(syntax/defscene scene3
+;  (syntax/wait 1000)
+;  (syntax/clear-backgrounds)
+;  (syntax/wait 1000)
+;  (syntax/background :bgtest))
+;
+;(syntax/defblock testblock
+;  (syntax/clear-backgrounds)
+;  (syntax/wait 1000)
+;  (syntax/background :bgtest))
+;
+;(syntax/defscene scene2
+;  (syntax/wait 1000)
+;  (syntax/sprite :horo)
+;  (syntax/wait 1000)
+;  (syntax/teleport-sprite :horo [100 200])
+;  (syntax/wait 1000)
+;  (syntax/no-sprite :horo)
+;  (syntax/jump-to-scene scene3))
+
 (syntax/defscene scene1
   (syntax/background :bgtest)
-  ;(syntax/bgm :bgm-beginning)
   (syntax/background :bgtest2)
+  (syntax/set-cps 30)
+  (syntax/declare-sprite :horo :bestgirl [300 200] 2)
   (syntax/wait 1000)
   (syntax/set-ui :dialogue-ui [0 300])
-  (syntax/show-ui))
+  (syntax/show-ui)
+  (morg "What is going on here?")
+  (syntax/sprite :horo)
+  (horo "B-b-baka!")
+  (syntax/no-sprite :horo)
+  (syntax/set-cps 0)
+  (syntax/narrate "And thus, the young man found himself...")
+  (syntax/narrate "...with a brand new \"game\" engine"))
+  ;(syntax/jump-to-scene scene2))
 
 (def start-game
   (into novelette.screens.storyscreen/BASE-STATE
         {:scrollfront (:body scene1)}))
+
+
+; ------------------ NO MORE TESTING STUFF -----------------
 
 (defn load-main-menu
   [screen]

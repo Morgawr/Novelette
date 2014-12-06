@@ -20,9 +20,10 @@
                   next-step? ; Whether or not to advance to next step for storytelling
                   show-ui? ; Whether or not we show the game UI on screen.
                   ui-img ; UI image to show
+                  input-state ; State of the input for the current frame.
+                  cursor ; Image of glyph used to advance text
                   ; TODO - add a "seen" map with all the dialogue options already seen
                   ;        to facilitate skipping of text.
-                  ; TODO - add map of in-game settings.
                   ])
 
 ; A sprite is different from an image, an image is a texture loaded into the
@@ -34,7 +35,7 @@
                    ; TODO - add scale and rotation
                    ])
 
-(def BASE-STATE (State. '() '() #{} {} '() {} 0 true false (Sprite. :dialogue-ui [0 0] 0)))
+(def BASE-STATE (State. '() '() #{} {} '() {} 0 true false (Sprite. :dialogue-ui [0 0] 0) {} :cursor))
 
 (defn advance-step
   [screen]
@@ -51,14 +52,6 @@
             (assoc-in s [:state :scrollfront] ((comp rest :scrollfront :state) s)))
       screen)))
 
-(defn set-storyteller
-  [{:keys [state] :as screen}]
-  (let [{:keys [scrollfront]} state
-        {:keys [storyteller]} screen]
-    (if (nil? storyteller)
-      (assoc-in screen [:storyteller] (s/StoryTeller. @s/RT-HOOKS {:type :dummy} 0 {} false true))
-      screen)))
-
 (defn evaluate
   [screen]
   (if (:done? (:storyteller screen))
@@ -73,7 +66,6 @@
   [screen on-top elapsed-time]
   (if on-top
     (-> screen
-        (set-storyteller)
         (advance-step)
         (s/update elapsed-time)
         (evaluate))
@@ -87,15 +79,21 @@
       (r/draw-image context [0 0] s))
     (when on-top
       (doseq [s sps]
-        ((comp r/draw-sprite second) context s))
+        (r/draw-sprite context (s (:sprites state))))
       (when (:show-ui? state)
-        (r/draw-sprite context (:ui-img state)))))
+        (r/draw-sprite context (:ui-img state)))
+      (when ((comp :display-message :state :storyteller) screen)
+        (r/draw-text context
+                     [15 320]
+                     ((comp :display-message :state :storyteller) screen)
+                     "bold"
+                     "white"))))
   screen)
 
 (defn handle-input
   [screen on-top mouse]
   (if on-top
-    (assoc screen :mouse mouse)
+    (assoc-in screen [:state :input-state :mouse] mouse)
     screen))
 
 (defn init
@@ -110,5 +108,5 @@
     :canvas canvas
     :deinit (fn [s] nil)
     :state gamestate
-    :storyteller nil
+    :storyteller (s/StoryTeller. @s/RT-HOOKS {:type :dummy} 0 {} false true)
     }))

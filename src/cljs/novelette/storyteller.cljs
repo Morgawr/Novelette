@@ -22,16 +22,50 @@
 (defn init-new
   [storyteller new?]
   (if new?
-    (assoc storyteller :state {} :done? false)
+    (do
+      (.log js/console (str "Added: " (pr-str (:current-state storyteller))))
+      (assoc storyteller :state {} :done? false :timer 0))
     storyteller))
 
+(defn init-dialogue-state
+  [state storyteller]
+  [state
+   (if (:first? storyteller)
+     (-> storyteller
+         (assoc-in [:state :cps] (:cps state))
+         (assoc-in [:state :end?] false))
+     storyteller)])
+
 (defn update-dialogue
-  [state {:keys [state current-state] :as storyteller}]
-  [state (assoc-in storyteller [:state :display-message]
-                   (apply str (:messages current-state)))])
+  [state storyteller]
+  [state
+   (let [{:keys [current-state timer]} storyteller
+         {:keys [cps end? display-message]} (:state storyteller)
+         {:keys [input-state]} state
+         message (first (:messages current-state))
+         cpms (if (zero? cps) 0
+                (/ 1000 cps)) ; TODO fix this shit
+         char-count (if (zero? cpms) 10000
+                      (int (/ timer cpms)))]
+     (cond
+      end?
+        (-> storyteller
+            (assoc-in [:state :display-message] message)
+            (assoc :done? ((comp :clicked :mouse) input-state)))
+      ((comp :clicked :mouse) input-state)
+        (-> storyteller
+            (assoc-in [:state :display-message] message)
+            (assoc-in [:state :end?] true))
+      (> char-count (count message))
+        (-> storyteller
+            (assoc-in [:state :display-message] message)
+            (assoc-in [:state :end?] true))
+      :else ; Update display-message according to cps
+        (assoc-in storyteller [:state :display-message]
+                  (apply str (take char-count message)))))])
 
 (defn parse-event
-  [storyteller state]
+  [state storyteller]
   (let [step (:current-state storyteller)]
     (cond
      (= :function (:type step))
@@ -44,7 +78,9 @@
      (= :explicit-choice (:type step))
        [state storyteller]
      (= :speech (:type step))
-       (update-dialogue state storyteller)
+       (->> [state storyteller]
+            (apply init-dialogue-state)
+            (apply update-dialogue))
      (= :dummy (:type step))
        (do
          (.log js/console "Dummy step")
@@ -64,11 +100,14 @@
           temp-storyteller (-> storyteller
                                (init-new new?)
                                (update-in [:timer] + elapsed-time))
-          [new-state new-storyteller] (parse-event temp-storyteller state)]
+          [new-state new-storyteller] (parse-event state temp-storyteller)]
     (assoc screen
       :storyteller (assoc new-storyteller :first? false)
       :state new-state))
     screen))
+
+
+; RUNTIME HOOKS
 
 (defn add-sprite
   [state storyteller id]
@@ -82,7 +121,14 @@
 
 (defn teleport-sprite
   [state storyteller id position]
-  [(assoc-in state [:sprites id] position)
+  [(assoc-in state [:sprites id :position] position)
+   (assoc storyteller :done? true)])
+
+(defn decl-sprite
+  [state storyteller id img pos z-index]
+  [(assoc-in state [:sprites id] {:id img
+                                  :position pos
+                                  :z-index z-index})
    (assoc storyteller :done? true)])
 
 (defn pop-background
@@ -124,16 +170,27 @@
     [state
      (assoc storyteller :done? true)]))
 
+(defn get-next-scene
+  [state storyteller scene]
+  [(assoc state :scrollfront (:body scene))
+   (assoc storyteller :done? true)])
+
+(defn set-cps
+  [state storyteller amount]
+  [(assoc state :cps amount)
+   (assoc storyteller :done? true)])
+
 (def RT-HOOKS (atom {
                      :play-bgm (fn [state storyteller id]
                                  (s/play-bgm id)
-                                 [state storyteller])
+                                 [state (assoc storyteller :done? true)])
                      :stop-bgm (fn [state storyteller]
                                  (s/stop-bgm)
-                                 [state storyteller])
+                                 [state (assoc storyteller :done? true)])
                      :add-sprite add-sprite
                      :remove-sprite remove-sprite
                      :teleport-sprite teleport-sprite
+                     :decl-sprite decl-sprite
                      :pop-background pop-background
                      :push-background push-background
                      :clear-backgrounds clear-backgrounds
@@ -141,4 +198,6 @@
                      :hide-ui hide-ui
                      :set-ui set-ui
                      :wait wait
+                     :get-next-scene get-next-scene
+                     :set-cps set-cps
                      }))

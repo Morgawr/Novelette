@@ -42,6 +42,10 @@
   `(fn [text#]
      (speak* ~name text# ~color)))
 
+(defmacro narrate
+  [text]
+  `(speak* "" ~text :red))
+
 (defmacro defspeaker
   [symbol name color] ; TODO - add support for font
   `(def ~symbol
@@ -87,7 +91,12 @@
 (defmacro defscene
   [name & body]
     `(def ~name { :name ~(str name)
-                  :body [~@body] }))
+                  :body (into [] (filter seq (flatten [~@body])))}))
+
+(defmacro defblock
+  [name & body]
+  `(defn ~name []
+     [~@body]))
 
 (defmacro clear-sprites
   "Removes all sprites from the screen."
@@ -180,15 +189,36 @@
     :params []})
 
 (defmacro set-ui
-  "Set the UI image to be used."
+  "Sets the UI image to be used."
   [id pos]
   `{:type :function
     :hook :set-ui
     :params [~id ~pos]})
 
+(defmacro set-cursor
+  "Sets the glyph image used as cursor."
+  [id]
+  `{:type :function
+    :hook :set-cursor
+    :params [~id]})
+
+(defmacro set-cps
+  "Sets the characters per second."
+  [amount]
+  `{:type :function
+    :hook :set-cps
+    :params [~amount]})
+
 (defmacro wait
-  "Wait for a given amount of millisecnds"
+  "Waits for a given amount of milliseconds."
   [msec]
   `{:type :function
     :hook :wait
     :params [~msec]})
+
+(defmacro jump-to-scene
+  "Transitions onto the next scene."
+  [name]
+  `{:type :function
+    :hook :get-next-scene
+    :params [~name]})
