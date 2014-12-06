@@ -4,7 +4,8 @@
             [novelette.sound :as gsound]
             novelette.screens.dialoguescreen
             [novelette.storyteller :as s]
-            [novelette.utils :as utils]))
+            [novelette.utils :as utils]
+            [clojure.string :as string]))
 
 ; This is the storytelling state of the game. It is an object containing the whole set of
 ; past, present and near-future state. It keeps track of stateful actions like scrollback,
@@ -23,6 +24,8 @@
                   input-state ; State of the input for the current frame.
                   cursor ; Image of glyph used to advance text
                   cursor-delta ; Delta to make the cursor float, just calculate % 4
+                  dialogue-bounds ; x,y, width and height of the boundaries of text to be displayed
+                  nametag-position ; x,y coordinates of the nametag in the UI
                   ; TODO - add a "seen" map with all the dialogue options already seen
                   ;        to facilitate skipping of text.
                   ])
@@ -36,7 +39,9 @@
                    ; TODO - add scale and rotation
                    ])
 
-(def BASE-STATE (State. '() '() #{} {} '() {} 0 true false (Sprite. :dialogue-ui [0 0] 0) {} :cursor 0))
+(def BASE-STATE (State. '() '() #{} {} '() {} 0 true false
+                        (Sprite. :dialogue-ui [0 0] 0) {} :cursor 0
+                        [0 0 0 0] [0 0]))
 
 (defn advance-step
   [screen]
@@ -78,9 +83,26 @@
         (evaluate))
     screen))
 
-(defn render-text
+(defn render-dialogue
   [{:keys [state storyteller context] :as screen}]
-  (let [{:keys [cursor cursor-delta]} state
+  (let [{:keys [cursor cursor-delta
+                dialogue-bounds nametag-position]} state
+        [x y w h] dialogue-bounds
+        step (+ 50 (int (/ w (r/measure-text-length context "m"))))
+        words (string/split ((comp :display-message :state) storyteller) #"\s")
+        nametag ((comp :name :current-state) storyteller)
+        namecolor ((comp :color :current-state) storyteller)
+        lines (if (> (count words) 1)
+                     (loop [ws '() acc [] curr words]
+                       (cond
+                        (empty? curr)
+                          (reverse (conj ws (string/join " " acc)))
+                        (< step (count (string/join " " (conj acc (first curr)))))
+                          (recur (conj ws (string/join " " acc)) [] curr)
+                        :else
+                          (recur ws (conj acc (first curr)) (rest curr))))
+                     words)
+        iterators (zipmap (drop-last lines) (range (count (drop-last lines))))
         offset (cond (< 0 cursor-delta 101) -2
                      (or (< 100 cursor-delta 201)
                          (< 700 cursor-delta 801)) -1
@@ -90,9 +112,19 @@
                          (< 500 cursor-delta 601)) 1
                      (< 400 cursor-delta 501) 2
                      :else 0)]
-    (r/draw-text-with-cursor context [15 320]
-                             ((comp :display-message :state) storyteller)
-                             "bold" "white" cursor offset)))
+    (.save context)
+    (set! (. context -shadowColor) "black")
+    (set! (. context -shadowOffsetX) 1.5)
+    (set! (. context -shadowOffsetY) 1.5)
+    (doseq [[s i] iterators]
+      (r/draw-text context [x (+ y (* i 35))] s "25px" "white"))
+    (when-not (nil? (last lines))
+      (r/draw-text-with-cursor context [x (+ y (* (dec (count lines)) 25))]
+                               (last lines)
+                               "25px" "white" cursor offset))
+    (when-not (empty? nametag)
+      (r/draw-text context nametag-position nametag "bold 29px" (name namecolor))))
+    (.restore context))
 
 (defn render
   [{:keys [state context] :as screen} on-top]
@@ -106,7 +138,7 @@
       (when (:show-ui? state)
         (r/draw-sprite context (:ui-img state)))
       (when ((comp :display-message :state :storyteller) screen)
-        (render-text screen))))
+        (render-dialogue screen))))
   screen)
 
 (defn handle-input

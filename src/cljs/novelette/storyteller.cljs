@@ -180,6 +180,16 @@
   [(assoc state :cps amount)
    (assoc storyteller :done? true)])
 
+(defn set-dialogue-bounds
+  [state storyteller x y w h]
+  [(assoc state :dialogue-bounds [x y w h])
+   (assoc storyteller :done? true)])
+
+(defn set-nametag-position
+  [state storyteller pos]
+  [(assoc state :nametag-position pos)
+   (assoc storyteller :done? true)])
+
 (def RT-HOOKS (atom {
                      :play-bgm (fn [state storyteller id]
                                  (s/play-bgm id)
@@ -200,4 +210,6 @@
                      :wait wait
                      :get-next-scene get-next-scene
                      :set-cps set-cps
+                     :set-dialogue-bounds set-dialogue-bounds
+                     :set-nametag-position set-nametag-position
                      }))

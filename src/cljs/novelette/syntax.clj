@@ -209,6 +209,20 @@
     :hook :set-cps
     :params [~amount]})
 
+(defmacro set-bounds
+  "Sets the dialogue bounds for the UI textbox."
+  [x y w h]
+  `{:type :function
+    :hook :set-dialogue-bounds
+    :params [~x ~y ~w ~h]})
+
+(defmacro set-nametag-position
+  "Sets the nametag position in the UI textbox."
+  [pos]
+  `{:type :function
+    :hook :set-nametag-position
+    :params [~pos]})
+
 (defmacro wait
   "Waits for a given amount of milliseconds."
   [msec]

@@ -12,7 +12,7 @@
 (def IMAGE-MAP (atom {}))
 
 ; TODO - Add support for multiple fonts
-(def FONT "Arial")
+(def FONT "sans-serif")
 
 (declare load-image)
 
@@ -55,17 +55,21 @@
              (first pos)
              (second pos)))
 
+(defn measure-text-length
+  [ctx text]
+  (.-width (.measureText ctx text)))
+
 (defn draw-text-with-cursor
   [ctx pos text attr color cursor-id cursor-y-offset]
   (draw-text ctx pos text attr color)
-  (let [width (.-width (.measureText ctx text))
+  (let [width (measure-text-length ctx text)
         [x y] pos]
     (draw-image ctx [(+ x width 2) (+ y 14 cursor-y-offset)] cursor-id)))
 
 (defn draw-text-centered
   [ctx pos text attr color]
   (set! (. ctx -font) (str attr " " FONT))
-  (let [width (.-width (.measureText ctx text))
+  (let [width (measure-text-length ctx text)
         newx (- (first pos) (/ width 2))]
     (draw-text ctx [newx (second pos)] text attr color)))
 

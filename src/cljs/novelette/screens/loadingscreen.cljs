@@ -48,7 +48,7 @@
 ; ------------------------------- TESTING STUFF --------------------------
 
 (syntax/defspeaker morg "Morgawr" :red)
-(syntax/defspeaker horo "Horo" :blue)
+(syntax/defspeaker horo "Horo" :brown)
 
 ;(syntax/defscene scene3
 ;  (syntax/wait 1000)
@@ -74,15 +74,17 @@
   (syntax/background :bgtest)
   (syntax/background :bgtest2)
   (syntax/set-cps 30)
+  (syntax/set-ui :dialogue-ui [0 420]) ; blaze it
+  (syntax/set-nametag-position [40 490])
+  (syntax/set-bounds 40 540 (- 1280 80) (- 800 540))
   (syntax/declare-sprite :horo :bestgirl [300 200] 2)
   (syntax/wait 1000)
-  (syntax/set-ui :dialogue-ui [0 300])
   (syntax/show-ui)
   (morg "What is going on here?")
   (syntax/sprite :horo)
-  (horo "B-b-baka!")
+  (horo "H-h-hi... My name is Horo, I am the ancient spirit of a god-wolf. I am cute as fuck :3c and this is some text that wraps around the UI box and is awesome as fuck.")
   (syntax/no-sprite :horo)
-  (syntax/set-cps 0)
+  ;(syntax/set-cps 0))
   (syntax/narrate "And thus, the young man found himself...")
   (syntax/narrate "...with a brand new \"game\" engine"))
   ;(syntax/jump-to-scene scene2))
