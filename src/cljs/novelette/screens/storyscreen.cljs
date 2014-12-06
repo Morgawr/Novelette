@@ -11,19 +11,19 @@
 ; sprites being rendered, bgm playing and other stuff. Ideally, it should be easy to
 ; save/load transparently.
 (defrecord State [scrollback ; Complete history of events for scrollback purposes, as a stack.
-                  current ; Current event being interpreted by the engine.
                   scrollfront ; Stack of events yet to be interpreted.
                   spriteset ; Set of sprite id currently displayed on screen.
                   sprites ; Map of sprites globally defined on screen.
                   backgrounds ; Stack of sprites currently in use as backgrounds.
                   points ; Map of points that the player obtained during the game
                   cps ; characters per second
+                  next-step ; Boolean, whether or not to advance to next step for storytelling
                   ; TODO - add a "seen" map with all the dialogue options already seen
                   ;        to facilitate skipping of text.
                   ; TODO - add map of in-game settings.
                   ])
 
-(def BASE-STATE (State. '() nil '() #{} {} '() {} 0))
+(def BASE-STATE (State. '() '() #{} {} '() {} 0 true))
 
 ; A sprite is different from an image, an image is a texture loaded into the
 ; engine's renderer with an id assigned as a reference. A sprite is an instance
@@ -34,27 +34,54 @@
                    ; TODO - add scale and rotation
                    ])
 
+(defn advance-step
+  [screen]
+  (let [next-step ((comp :next-step :state) screen)
+        scroll-front ((comp :scrollfront :state) screen)]
+    (if (and next-step
+             (not (empty? scroll-front)))
+      (as-> screen s
+            (update-in s [:state :scrollback] conj ((comp :current-state :storyteller) s))
+            (assoc-in s [:state :next-step] false)
+            (assoc-in s [:storyteller :current-state] ((comp first :scrollfront :state) s))
+            (assoc-in s [:storyteller :done?] false)
+            (assoc-in s [:storyteller :first?] true)
+            (assoc-in s [:state :scrollfront] ((comp rest :scrollfront :state) s)))
+      screen)))
+
 (defn set-storyteller
-  [{:keys [storyteller scrollfront] :as screen}]
-  (if (nil? storyteller)
-    (assoc screen :storyteller (s/StoryTeller. scrollfront @s/RT-HOOKS 0))
+  [{:keys [state] :as screen}]
+  (let [{:keys [storyteller scrollfront]} state]
+    (if (nil? storyteller)
+      (assoc-in screen [:storyteller] (s/StoryTeller. @s/RT-HOOKS {:type :dummy} 0 {} false true))
+      screen)))
+
+(defn step-storyteller
+  [screen elapsed-time]
+  (s/update screen elapsed-time))
+
+(defn evaluate
+  [screen]
+  (if ((comp :done? :storyteller) screen)
+    (assoc-in screen [:state :next-step] true)
     screen))
 
 (defn update
   [screen on-top elapsed-time]
-  (.log js/console (:timer (:storyteller screen)))
   (if on-top
     (-> screen
         (set-storyteller)
-        (s/update elapsed-time))
+        (advance-step)
+        (step-storyteller elapsed-time)
+        (evaluate))
     screen))
 
 (defn render
-  [{:keys [state ctx] :as screen} on-top]
-  (let [bgs (:backgrounds state)
+  [{:keys [state context] :as screen} on-top]
+  (let [bgs (reverse (:backgrounds state))
         sps (utils/sort-z-index (:spriteset state))]
     (doseq [s bgs]
-      (r/draw-image ctx [0 0] s))
+      (r/draw-image context [0 0] s))
     (when on-top
       (doseq [s sps]
         ((comp r/draw-sprite second) s))))

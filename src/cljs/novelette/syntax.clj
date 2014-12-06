@@ -134,7 +134,8 @@
   "Stops playing the bgm."
   []
   `{:type :function
-    :hook :stop-bgm})
+    :hook :stop-bgm
+    :params []})
 
 (defmacro declare-sprite
   "Declares a sprite bound to the current screen"
@@ -147,7 +148,8 @@
   "Empties the background stack"
   []
   `{:type :function
-    :hook :clear-backgrounds})
+    :hook :clear-backgrounds
+    :params []})
 
 (defmacro background
   "Adds a new background on top of the stack"
@@ -160,4 +162,5 @@
   "Removes the topmost background from the stack"
   []
   `{:type :function
-    :hook :pop-background})
+    :hook :pop-background
+    :params []})

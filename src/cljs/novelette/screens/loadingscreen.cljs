@@ -1,4 +1,5 @@
 (ns novelette.screens.loadingscreen
+  (:require-macros [novelette.syntax :as syntax])
   (:require [novelette.render :as r]
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
@@ -7,9 +8,10 @@
 ; This is the loading screen, it is the first screen that we load in the game
 ; and its task is to load all the resources (images, sounds, etc etc) of the
 ; game before we can begin playing.
-(def image-list {})
+(def image-list {:bgtest "img/background.png"
+                 :bgtest2 "img/background2.png"})
 
-(def audio-list {})
+(def audio-list {:bgm-beginning "sound/beginning"})
 
 (defn can-play?
   [type]
@@ -40,6 +42,15 @@
     (handle-input screen mouse)
     screen))
 
+(syntax/defscene scene1
+  (syntax/background :bgtest)
+  (syntax/bgm :bgm-beginning)
+  (syntax/background :bgtest2))
+
+(def start-game
+  (into novelette.screens.storyscreen/BASE-STATE
+        {:scrollfront (:body scene1)}))
+
 (defn load-main-menu
   [screen]
   (let [ctx (:context screen)
@@ -49,7 +60,7 @@
       (fn [state]
         (let [screen-list (:screen-list state)
               mmenu (novelette.screens.storyscreen/init ctx canvas
-                                                        novelette.screens.storyscreen/BASE-STATE) ; TODO - pass screen to load
+                                                        start-game) ; TODO - pass screen to load
               new-list (gscreen/replace-screen mmenu screen-list)]
           (assoc state :screen-list new-list))))))
 
