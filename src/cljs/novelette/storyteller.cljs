@@ -8,6 +8,9 @@
 (declare add-sprite)
 (declare remove-sprite)
 (declare teleport-sprite)
+(declare pop-background)
+(declare push-background)
+(declare clear-backgrounds)
 
 (def RT-HOOKS (atom {
                      :play-bgm (fn [screen id]
@@ -19,6 +22,9 @@
                      :add-sprite add-sprite
                      :remove-sprite remove-sprite
                      :teleport-sprite teleport-sprite
+                     :pop-background pop-background
+                     :push-background push-background
+                     :clear-background clear-backgrounds
                      }))
 
 (defrecord StoryTeller [machine ; State-machine of the entire game.
@@ -48,3 +54,15 @@
 (defn teleport-sprite
   [screen id position]
   (assoc-in screen [:sprites id] position))
+
+(defn pop-background
+  [screen]
+  (update-in screen [:backgrounds] rest))
+
+(defn push-background
+  [screen id]
+  (update-in screen [:backgrounds] conj id))
+
+(defn clear-backgrounds
+  [screen]
+  (assoc screen :backgrounds '()))

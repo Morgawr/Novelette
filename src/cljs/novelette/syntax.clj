@@ -142,3 +142,22 @@
   `{:type :function
     :hook :decl-sprite
     :params [~id ~image-id ~position ~z-index]})
+
+(defmacro clear-backgrounds
+  "Empties the background stack"
+  []
+  `{:type :function
+    :hook :clear-backgrounds})
+
+(defmacro background
+  "Adds a new background on top of the stack"
+  [id]
+  `{:type :function
+    :hook :push-background
+    :params [~id]})
+
+(defmacro no-background
+  "Removes the topmost background from the stack"
+  []
+  `{:type :function
+    :hook :pop-background})

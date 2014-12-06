@@ -5,7 +5,8 @@
                         :clicked false
                         }))
 
-; TODO - make mouse work with relative position to top-left corner
+; TODO - Maybe add keyboard stuff too
+; TODO - Make mouse work with relative position to top-left corner
 (defn mouse-move-listener
   [event]
   (swap! MOUSE-STATE assoc

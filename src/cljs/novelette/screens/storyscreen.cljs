@@ -15,7 +15,7 @@
                   scrollfront ; Stack of events yet to be interpreted.
                   spriteset ; Set of sprite id currently displayed on screen.
                   sprites ; Map of sprites globally defined on screen.
-                  backgrounds ; Map of sprites currently in use as backgrounds.
+                  backgrounds ; Stack of sprites currently in use as backgrounds.
                   points ; Map of points that the player obtained during the game
                   cps ; characters per second
                   ; TODO - add a "seen" map with all the dialogue options already seen
@@ -23,7 +23,7 @@
                   ; TODO - add map of in-game settings.
                   ])
 
-(def BASE-STATE (State. '() nil '() #{} {} {} {} 0))
+(def BASE-STATE (State. '() nil '() #{} {} '() {} 0))
 
 ; A sprite is different from an image, an image is a texture loaded into the
 ; engine's renderer with an id assigned as a reference. A sprite is an instance
@@ -51,10 +51,10 @@
 
 (defn render
   [{:keys [state ctx] :as screen} on-top]
-  (let [bgs (utils/sort-z-index (:backgrounds state))
+  (let [bgs (:backgrounds state)
         sps (utils/sort-z-index (:spriteset state))]
     (doseq [s bgs]
-      ((comp r/draw-sprite second) s))
+      (r/draw-image ctx [0 0] s))
     (when on-top
       (doseq [s sps]
         ((comp r/draw-sprite second) s))))
