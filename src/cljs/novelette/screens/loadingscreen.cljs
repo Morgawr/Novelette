@@ -1,7 +1,5 @@
 (ns novelette.screens.loadingscreen
-  (:require-macros [novelette.syntax :as syntax])
   (:require [novelette.render :as r]
-            [novelette.syntax :as syntax]
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
             [novelette.screens.storyscreen]))
@@ -46,9 +44,7 @@
       :next-frame
       (fn [state]
         (let [screen-list (:screen-list state)
-              mmenu (novelette.screens.storyscreen/init ctx canvas
-                                                        start-game) ; TODO - pass screen to load
-              new-list (gscreen/replace-screen mmenu screen-list)]
+              new-list (gscreen/replace-screen (:to-load screen) screen-list)]
           (assoc state :screen-list new-list))))))
 
 (defn percentage-loaded
@@ -98,10 +94,10 @@
        (assoc screen :percentage (percentage-loaded images sounds)))))
 
 (defn draw
-  [screen]
-  (r/draw-text-centered (:context screen) [400 250]
+  [screen] ; TODO - set coordinates to proper resolution
+  (r/draw-text-centered (:context screen) [690 310]
                         (:message screen) "25px" "white")
-  (r/draw-text-centered (:context screen) [400 300]
+  (r/draw-text-centered (:context screen) [690 360]
                         (str (:percentage screen) "%") "25px" "white")
   screen)
 
