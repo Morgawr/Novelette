@@ -126,6 +126,21 @@
       (r/draw-text context nametag-position nametag "bold 29px" (name namecolor))))
     (.restore context))
 
+(defn render-choice
+  [{:keys [state storyteller context] :as screen}]
+  (.save context)
+  (set! (. context -shadowColor) "black")
+  (set! (. context -shadowOffsetX) 1.5)
+  (set! (. context -shadowOffsetY) 1.5)
+  (let [name ((comp :choice-text :state) storyteller)
+        options ((comp :option-names :state) storyteller)
+        pos-w (int (/ (r/measure-text-length context name) 2))]
+    (r/draw-image context [415 180] :choicebg)
+    (r/draw-text-centered context [640 220] name "30px" "white")
+    (doseq [[s i] (zipmap options (range (count options)))]
+      (r/draw-text context [(- 590 pos-w) (+ 285 (* i 45))] s "25px" "white")))
+  (.restore context))
+
 (defn render
   [{:keys [state context] :as screen} on-top]
   (let [bgs (reverse (:backgrounds state))
@@ -138,7 +153,9 @@
       (when (:show-ui? state)
         (r/draw-sprite context (:ui-img state)))
       (when ((comp :display-message :state :storyteller) screen)
-        (render-dialogue screen))))
+        (render-dialogue screen))
+      (when ((comp :choice-text :state :storyteller) screen)
+        (render-choice screen))))
   screen)
 
 (defn handle-input

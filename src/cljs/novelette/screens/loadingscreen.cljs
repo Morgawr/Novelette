@@ -1,6 +1,7 @@
 (ns novelette.screens.loadingscreen
   (:require-macros [novelette.syntax :as syntax])
   (:require [novelette.render :as r]
+            [novelette.syntax :as syntax]
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
             [novelette.screens.storyscreen]))
@@ -12,7 +13,8 @@
                  :bgtest2 "img/background2.png"
                  :dialogue-ui "img/dialogbg.png"
                  :bestgirl "img/bestgirl.png"
-                 :cursor "img/cursor.png"})
+                 :cursor "img/cursor.png"
+                 :choicebg "img/choicebg.png"})
 
 (def audio-list {:bgm-beginning "sound/beginning"})
 
@@ -70,6 +72,15 @@
 ;  (syntax/no-sprite :horo)
 ;  (syntax/jump-to-scene scene3))
 
+(syntax/defscene yes-scene
+  (syntax/show-ui)
+  (morg "Kawaii :3c"))
+
+(syntax/defscene no-scene
+  (syntax/show-ui)
+  (morg "Fuck you :3c"))
+
+
 (syntax/defscene scene1
   (syntax/background :bgtest)
   (syntax/background :bgtest2)
@@ -78,16 +89,32 @@
   (syntax/set-nametag-position [40 490])
   (syntax/set-bounds 40 540 (- 1280 80) (- 800 540))
   (syntax/declare-sprite :horo :bestgirl [300 200] 2)
-  (syntax/wait 1000)
+  (syntax/sprite :horo)
+  (syntax/wait 50)
+  (syntax/teleport-sprite :horo [310 200])
+  (syntax/wait 50)
+  (syntax/teleport-sprite :horo [320 200])
+  (syntax/wait 50)
+  (syntax/teleport-sprite :horo [330 200])
+  (syntax/wait 50)
+  (syntax/teleport-sprite :horo [340 200])
   (syntax/show-ui)
+
   (morg "What is going on here?")
   (syntax/sprite :horo)
   (horo "H-h-hi... My name is Horo, I am the ancient spirit of a god-wolf. I am cute as fuck :3c and this is some text that wraps around the UI box and is awesome as fuck.")
+
+  (syntax/hide-ui)
+  (syntax/choice
+   "Will you follow her?"
+   (syntax/option "Yes!" yes-scene)
+   (syntax/option "No!" no-scene)
+   (syntax/option "Do I have condoms?" no-scene)
+   (syntax/default "Yes!"))
+
   (syntax/no-sprite :horo)
-  ;(syntax/set-cps 0))
   (syntax/narrate "And thus, the young man found himself...")
   (syntax/narrate "...with a brand new \"game\" engine"))
-  ;(syntax/jump-to-scene scene2))
 
 (def start-game
   (into novelette.screens.storyscreen/BASE-STATE

@@ -51,18 +51,6 @@
   `(def ~symbol
      (speaker ~name ~color)))
 
-(defn option
-  [id jump & args]
-  (loop [opt args res {:jump jump}]
-    (cond
-     (empty? opt) {:options {id res}}
-     (= :pre (first (first opt)))
-       (recur (rest opt) (assoc res :pre (second (first opt))))
-     (= :post (first (first opt)))
-       (recur (rest opt) (assoc res :post (second (first opt))))
-     :else ; ignore it
-       (recur (rest opt) res))))
-
 (defmacro default
   [id]
   `{:default ~id})
@@ -81,12 +69,6 @@
   [args]
   `{:type :implicit-choice
     :options (map :options ~args)})
-
-(defn choice
-  [& args]
-  (if (string? (first args))
-    (choice-explicit* (first args) (rest args))
-    (choice-implicit* args)))
 
 (defmacro defscene
   [name & body]

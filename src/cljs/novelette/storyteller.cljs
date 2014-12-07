@@ -64,6 +64,35 @@
         (assoc-in storyteller [:state :display-message]
                   (apply str (take char-count message)))))])
 
+(defn init-explicit-choice
+  [state storyteller]
+  [state
+   (if (:first? storyteller)
+     (-> storyteller
+         (assoc-in [:state :choice-text] ((comp :text :current-state) storyteller))
+         (assoc-in [:state :option-names] (keys ((comp :options :current-state) storyteller))))
+     storyteller)])
+
+(defn update-explicit-choice
+  [state storyteller]
+  (if ((comp :clicked :mouse :input-state) state)
+    (let [{:keys [y]} ((comp :mouse :input-state) state)
+          options ((comp :option-names :state) storyteller)]
+      (loop [opts options acc 0]
+        (let [y-base (+ 285 (* acc 45))]
+          (cond
+           (> acc (count options))
+             [state storyteller]
+           (< y-base y (+ y-base 44))
+             (let [next (as-> storyteller s
+                              ((comp :options :current-state)s )
+                              (s (first opts))
+                              ((comp :body :jump) s))]
+               [(assoc state :scrollfront next) (assoc storyteller :done? true)])
+           :else
+             (recur (rest opts) (inc acc))))))
+    [state storyteller]))
+
 (defn parse-event
   [state storyteller]
   (let [step (:current-state storyteller)]
@@ -76,7 +105,9 @@
      (= :implicit-choice (:type step))
        [state storyteller]
      (= :explicit-choice (:type step))
-       [state storyteller]
+       (->> [state storyteller]
+            (apply init-explicit-choice)
+            (apply update-explicit-choice))
      (= :speech (:type step))
        (->> [state storyteller]
             (apply init-dialogue-state)
