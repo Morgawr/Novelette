@@ -150,6 +150,11 @@
   [(update-in state [:spriteset] disj id)
    (assoc storyteller :done? true)])
 
+(defn clear-sprites
+  [state storyteller id]
+  [(assoc state :spriteset #{})
+   (assoc storyteller :done? true)])
+
 (defn teleport-sprite
   [state storyteller id position]
   [(assoc-in state [:sprites id :position] position)
@@ -231,6 +236,7 @@
                      :add-sprite add-sprite
                      :remove-sprite remove-sprite
                      :teleport-sprite teleport-sprite
+                     :clear-sprites clear-sprites
                      :decl-sprite decl-sprite
                      :pop-background pop-background
                      :push-background push-background

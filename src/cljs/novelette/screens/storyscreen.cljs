@@ -119,7 +119,7 @@
     (doseq [[s i] iterators]
       (r/draw-text context [x (+ y (* i 35))] s "25px" "white"))
     (when-not (nil? (last lines))
-      (r/draw-text-with-cursor context [x (+ y (* (dec (count lines)) 25))]
+      (r/draw-text-with-cursor context [x (+ y (* (dec (count lines)) 35))]
                                (last lines)
                                "25px" "white" cursor offset))
     (when-not (empty? nametag)
