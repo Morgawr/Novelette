@@ -13,6 +13,7 @@
                  :bgtest2 "img/background2.png"
                  :dialogue-ui "img/dialogbg.png"
                  :bestgirl "img/bestgirl.png"
+                 :kurt "img/kurt.png"
                  :cursor "img/cursor.png"
                  :choicebg "img/choicebg.png"})
 
@@ -23,16 +24,16 @@
   (not (empty? (. (js/Audio.) canPlayType type))))
 
 (defn set-audio-extension
-  [ext]
-  (set! audio-list (into {} (for [[k v] audio-list] [k (str v ext)]))))
+  [audio ext]
+  (into {} (for [[k v] audio] [k (str v ext)])))
 
 (defn generate-audio-list
-  []
+  [audio]
   (let [canplayogg (can-play? "audio/ogg; codecs=vorbis")
         canplaymp3 (can-play? "audio/mpeg")]
     (cond
-     canplayogg (set-audio-extension ".ogg")
-     canplaymp3 (set-audio-extension ".mp3")
+     canplayogg (set-audio-extension audio ".ogg")
+     canplaymp3 (set-audio-extension audio ".mp3")
      :else (js/alert "Your browser does not seem to support the proper audio standards. The game will not work."))))
 
 (defn handle-input
@@ -51,6 +52,7 @@
 
 (syntax/defspeaker morg "Morgawr" :red)
 (syntax/defspeaker horo "Horo" :brown)
+(syntax/defspeaker kurt "Kurt" :yellow)
 
 ;(syntax/defscene scene3
 ;  (syntax/wait 1000)
@@ -82,39 +84,33 @@
 
 
 (syntax/defscene scene1
-  (syntax/background :bgtest)
-  (syntax/background :bgtest2)
+  ;(syntax/background :bgtest)
   (syntax/set-cps 30)
   (syntax/set-ui :dialogue-ui [0 420]) ; blaze it
   (syntax/set-nametag-position [40 490])
   (syntax/set-bounds 40 540 (- 1280 80) (- 800 540))
   (syntax/declare-sprite :horo :bestgirl [300 200] 2)
-  (syntax/sprite :horo)
-  (syntax/wait 50)
-  (syntax/teleport-sprite :horo [310 200])
-  (syntax/wait 50)
-  (syntax/teleport-sprite :horo [320 200])
-  (syntax/wait 50)
-  (syntax/teleport-sprite :horo [330 200])
-  (syntax/wait 50)
-  (syntax/teleport-sprite :horo [340 200])
+  (syntax/declare-sprite :kurt :kurt [750 20] 1)
+  ;(syntax/sprite :horo)
   (syntax/show-ui)
 
   (morg "What is going on here?")
-  (syntax/sprite :horo)
-  (horo "H-h-hi... My name is Horo, I am the ancient spirit of a god-wolf. I am cute as fuck :3c and this is some text that wraps around the UI box and is awesome as fuck.")
-
-  (syntax/hide-ui)
-  (syntax/choice
-   "Will you follow her?"
-   (syntax/option "Yes!" yes-scene)
-   (syntax/option "No!" no-scene)
-   (syntax/option "Do I have condoms?" no-scene)
-   (syntax/default "Yes!"))
-
-  (syntax/no-sprite :horo)
-  (syntax/narrate "And thus, the young man found himself...")
-  (syntax/narrate "...with a brand new \"game\" engine"))
+  (syntax/sprite :kurt)
+  (kurt "Yo, s'up buddy"))
+  ;(syntax/sprite :horo)
+  ;(horo "H-h-hi... My name is Horo, I am the ancient spirit of a god-wolf. I am cute as fuck :3c and this is some text that wraps around the UI box and is awesome as fuck.")
+  ;
+  ;(syntax/hide-ui)
+  ;(syntax/choice
+  ; "Will you follow her?"
+  ; (syntax/option "Yes!" yes-scene)
+  ; (syntax/option "No!" no-scene)
+  ; (syntax/option "Do I have condoms?" no-scene)
+  ; (syntax/default "Yes!"))
+  ;
+  ;(syntax/no-sprite :horo)
+  ;(syntax/narrate "And thus, the young man found himself...")
+  ;(syntax/narrate "...with a brand new \"game\" engine"))
 
 (def start-game
   (into novelette.screens.storyscreen/BASE-STATE
@@ -149,7 +145,7 @@
         message "Finished loading, click to continue"]
     (assoc screen :complete complete :message message
       :percentage (percentage-loaded
-                   (count image-list) (count audio-list)))))
+                   (count (:image-list screen)) (count (:audio-list screen))))))
 
 (defn has-loaded?
   [num res-map]
@@ -162,7 +158,7 @@
 
 (defn load-sounds
   [screen]
-  (doseq [[k v] audio-list] (gsound/load-sound v k))
+  (doseq [[k v] (:audio-list screen)] (gsound/load-sound v k))
   (assoc screen :loading-status 1))
 
 (defn update
@@ -191,9 +187,8 @@
   screen)
 
 (defn init
-  [ctx canvas]
-  (generate-audio-list)
-  (doseq [[k v] image-list] (r/load-image v k))
+  [ctx canvas images audios to-load]
+  (doseq [[k v] images] (r/load-image v k))
   (-> gscreen/BASE-SCREEN
       (into {
              :id "LoadingScreen"
@@ -210,4 +205,7 @@
              :message "Loading..."
              :percentage 0
              :loading-status 0 ; 0 = image, 1 = sound
+             :audio-list (generate-audio-list audios)
+             :image-list images
+             :to-load to-load ;(novelette.screens.storyscreen/init ctx canvas start-game)
              })))

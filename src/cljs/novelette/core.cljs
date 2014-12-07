@@ -4,6 +4,7 @@
             [goog.events :as events]
             [goog.events.EventType :as event-type]
             novelette.screens.loadingscreen
+            novelette.screens.storyscreen
             [novelette.input :as input]
             [novelette.screen :as screen]))
 
@@ -18,7 +19,10 @@
   (let [document (dom/getDocument)
         canvas (dom/getElement "surface")
         ctx (.getContext canvas "2d")
-        loading (novelette.screens.loadingscreen/init ctx canvas)
+        loading (novelette.screens.loadingscreen/init ctx canvas novelette.screens.loadingscreen/image-list
+                                                      novelette.screens.loadingscreen/audio-list
+                                                      (novelette.screens.storyscreen/init  ctx  canvas
+                                                       novelette.screens.loadingscreen/start-game))
         state (screen/State. [loading] 0 ctx canvas)]
     (events/listen js/window event-type/MOUSEMOVE input/mouse-move-listener)
     (events/listen js/window event-type/CLICK input/mouse-click-listener)
