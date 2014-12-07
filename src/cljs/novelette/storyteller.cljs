@@ -23,7 +23,7 @@
   [storyteller new?]
   (if new?
     (do
-      (.log js/console (str "Added: " (pr-str (:current-state storyteller))))
+      ;(.log js/console (str "Added: " (pr-str (:current-state storyteller)))) ; TODO - debug flag
       (assoc storyteller :state {} :done? false :timer 0))
     storyteller))
 

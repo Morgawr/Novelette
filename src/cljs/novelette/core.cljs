@@ -8,6 +8,17 @@
             [novelette.input :as input]
             [novelette.screen :as screen]))
 
+(def image-list {:bgtest "img/background.png"
+                 :bgtest2 "img/background2.png"
+                 :dialogue-ui "img/dialogbg.png"
+                 :bestgirl "img/bestgirl.png"
+                 :kurt "img/kurt.png"
+                 :cursor "img/cursor.png"
+                 :choicebg "img/choicebg.png"})
+
+(def audio-list {:bgm-beginning "sound/beginning"})
+
+
 
 (defn ^:export connect
   []
@@ -19,8 +30,7 @@
   (let [document (dom/getDocument)
         canvas (dom/getElement "surface")
         ctx (.getContext canvas "2d")
-        loading (novelette.screens.loadingscreen/init ctx canvas novelette.screens.loadingscreen/image-list
-                                                      novelette.screens.loadingscreen/audio-list
+        loading (novelette.screens.loadingscreen/init ctx canvas image-list audio-list
                                                       (novelette.screens.storyscreen/init  ctx  canvas
                                                        novelette.screens.loadingscreen/start-game))
         state (screen/State. [loading] 0 ctx canvas)]
