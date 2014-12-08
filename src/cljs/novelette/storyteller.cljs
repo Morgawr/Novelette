@@ -81,7 +81,7 @@
       (loop [opts options acc 0]
         (let [y-base (+ 285 (* acc 45))]
           (cond
-           (> acc (count options))
+           (or (empty? opts) (>= acc (count options)))
              [state storyteller]
            (< y-base y (+ y-base 44))
              (let [next (as-> storyteller s
