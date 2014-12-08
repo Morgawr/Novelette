@@ -88,7 +88,7 @@
   (let [{:keys [cursor cursor-delta
                 dialogue-bounds nametag-position]} state
         [x y w h] dialogue-bounds
-        step (+ 50 (int (/ w (r/measure-text-length context "m"))))
+        step (+ 30 (int (/ w (r/measure-text-length context "m"))))
         words (string/split ((comp :display-message :state) storyteller) #"\s")
         nametag ((comp :name :current-state) storyteller)
         namecolor ((comp :color :current-state) storyteller)
@@ -136,20 +136,20 @@
         options ((comp :option-names :state) storyteller)
         pos-w (int (/ (r/measure-text-length context name) 2))]
     (r/draw-image context [415 180] :choicebg)
-    (r/draw-text-centered context [640 220] name "30px" "white")
+    (r/draw-text-centered context [680 220] name "25px" "white")
     (doseq [[s i] (zipmap options (range (count options)))]
-      (r/draw-text context [(- 590 pos-w) (+ 285 (* i 45))] s "25px" "white")))
+      (r/draw-text context [(- 620 pos-w) (+ 285 (* i 45))] s "20px" "white")))
   (.restore context))
 
 (defn render
   [{:keys [state context] :as screen} on-top]
   (let [bgs (reverse (:backgrounds state))
-        sps (utils/sort-z-index (:spriteset state))]
+        sps (if (seq (:spriteset state)) (utils/sort-z-index ((apply juxt (:spriteset state)) (:sprites state))) [])]
     (doseq [s bgs]
       (r/draw-image context [0 0] s))
     (when on-top
       (doseq [s sps]
-        (r/draw-sprite context (s (:sprites state))))
+        (r/draw-sprite context s))
       (when (:show-ui? state)
         (r/draw-sprite context (:ui-img state)))
       (when ((comp :display-message :state :storyteller) screen)
