@@ -1,5 +1,7 @@
 # Novelette
 
+[![Build Status](https://travis-ci.org/Morgawr/Novelette.svg?branch=master)](https://travis-ci.org/Morgawr/Novelette)
+
 A ClojureScript engine used to develop Visual Novels and graphic storytelling on
 the browser and node-webkit.
 
