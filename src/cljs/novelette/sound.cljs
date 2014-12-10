@@ -10,25 +10,25 @@
 (defn load-error
   [uri sym]
   (let [window (dom/getWindow)]
-    (. window setTimeout #(load-sound uri sym) 200)))
+    (.setTimeout window #(load-sound uri sym) 200)))
 
 (defn load-sound
   [uri sym]
   (let [sound (js/Audio.)]
-    (set! (. sound -loop) true)
-    (. sound addEventListener "loadeddata" #(swap! SOUND-MAP assoc sym sound))
-    (set! (. sound -onerror) #(load-error uri sym))
-    (set! (. sound -src) uri)))
+    (set! (.-loop sound) true)
+    (.addEventListener sound "loadeddata" #(swap! SOUND-MAP assoc sym sound))
+    (set! (.-onerror sound) #(load-error uri sym))
+    (set! (.-src sound) uri)))
 
 (defn stop-audio
   [sound]
-  (. sound pause))
+  (.pause sound))
 
 (defn play-audio
   [sound loop?]
-  (set! (. sound -currentTime) 0)
-  (set! (. sound -loop) loop?)
-  (. sound play))
+  (set! (.-currentTime sound) 0)
+  (set! (.-loop sound) loop?)
+  (.play sound))
 
 (defn stop-bgm
   []

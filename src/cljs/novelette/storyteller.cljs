@@ -2,7 +2,8 @@
 ; setting up the storytelling engine with event hooks and storytelling
 ; routines.
 (ns novelette.storyteller
-  (:require [novelette.sound :as s]))
+  (:require [novelette.sound :as s]
+            [clojure.string]))
 
 (defrecord StoryTeller [runtime-hooks ; Map of runtime hooks to in-text macros
                         current-state ; Current state to parse.
@@ -62,7 +63,7 @@
             (assoc-in [:state :end?] true))
       :else ; Update display-message according to cps
         (assoc-in storyteller [:state :display-message]
-                  (apply str (take char-count message)))))])
+                  (clojure.string/join (take char-count message)))))])
 
 (defn init-explicit-choice
   [state storyteller]
@@ -126,7 +127,7 @@
 
 (defn update
   [{:keys [storyteller state] :as screen} elapsed-time]
-  (if (not (:done? storyteller))
+  (if-not (:done? storyteller)
     (let [new? (:first? storyteller)
           temp-storyteller (-> storyteller
                                (init-new new?)
@@ -136,7 +137,6 @@
       :storyteller (assoc new-storyteller :first? false)
       :state new-state))
     screen))
-
 
 ; RUNTIME HOOKS
 

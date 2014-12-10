@@ -6,9 +6,9 @@
   (loop [opt args res {:jump jump}]
     (cond
      (empty? opt) {:options {id res}}
-     (= :pre (first (first opt)))
+     (= :pre (ffirst opt))
        (recur (rest opt) (assoc res :pre (second (first opt))))
-     (= :post (first (first opt)))
+     (= :post (ffirst opt))
        (recur (rest opt) (assoc res :post (second (first opt))))
      :else ; ignore it
        (recur (rest opt) res))))

@@ -1,5 +1,6 @@
 (ns novelette.render
-  (:require [goog.dom :as dom]))
+  (:require [goog.dom :as dom]
+            [clojure.string]))
 
 (defn clear-context
   [screen]
@@ -19,14 +20,14 @@
 (defn load-error
   [uri sym]
   (let [window (dom/getWindow)]
-    (. window setTimeout #(load-image uri sym) 200)))
+    (.setTimeout window #(load-image uri sym) 200)))
 
 (defn load-image
   [uri sym]
   (let [image (js/Image. )]
-    (set! (. image -onload) #(swap! IMAGE-MAP assoc sym image))
-    (set! (. image -onerror) #(load-error uri sym))
-    (set! (. image -src) uri)))
+    (set! (.-onload image) #(swap! IMAGE-MAP assoc sym image))
+    (set! (.-onerror image) #(load-error uri sym))
+    (set! (.-src image) uri)))
 
 (defn draw-image
   [ctx pos name]
@@ -41,16 +42,16 @@
 
 (defn fill-clear
   [canvas ctx color]
-  (set! (. ctx -fillStyle) color)
+  (set! (.-fillStyle ctx) color)
   (.fillRect ctx 0 0
              (.-width canvas)
              (.-height canvas)))
 
 (defn draw-text
   [ctx pos text attr color]
-  (set! (. ctx -textBaseline) "top")
-  (set! (. ctx -font) (str attr " " FONT))
-  (set! (. ctx -fillStyle) color)
+  (set! (.-textBaseline ctx) "top")
+  (set! (.-font ctx) (str attr " " FONT))
+  (set! (.-fillStyle ctx) color)
   (.fillText ctx text
              (first pos)
              (second pos)))
@@ -68,7 +69,7 @@
 
 (defn draw-text-centered
   [ctx pos text attr color]
-  (set! (. ctx -font) (str attr " " FONT))
+  (set! (.-font ctx) (str attr " " FONT))
   (let [width (measure-text-length ctx text)
         newx (- (first pos) (/ width 2))]
     (draw-text ctx [newx (second pos)] text attr color)))
@@ -90,8 +91,8 @@
   [ctx pos msg attr color maxlength spacing]
   (loop [msgs msg y (second pos)]
     (let [res (split-index msgs maxlength)
-          first-msg (apply str (first res))
-          rest-msg (apply str (second res))]
+          first-msg (clojure.string/join (first res))
+          rest-msg (clojure.string/join (second res))]
       (if (empty? rest-msg)
         (draw-text-centered ctx [(first pos) y] first-msg attr color)
         (do
