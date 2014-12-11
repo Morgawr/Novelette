@@ -234,12 +234,12 @@
       (assoc-in [:storyteller :done?] true)))
 
 (def RT-HOOKS (atom {
-                     :play-bgm (fn [state storyteller id]
+                     :play-bgm (fn [screen id]
                                  (s/play-bgm id)
-                                 [state (assoc storyteller :done? true)])
-                     :stop-bgm (fn [state storyteller]
+                                 (assoc-in screen [:storyteller :done?] true))
+                     :stop-bgm (fn [screen]
                                  (s/stop-bgm)
-                                 [state (assoc storyteller :done? true)])
+                                 (assoc-in screen [:storyteller :done?] true))
                      :add-sprite add-sprite
                      :remove-sprite remove-sprite
                      :teleport-sprite teleport-sprite
