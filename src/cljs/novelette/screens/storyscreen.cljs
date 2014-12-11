@@ -50,16 +50,15 @@
   [screen]
   (let [next-step? ((comp :next-step? :state) screen)
         scroll-front ((comp :scrollfront :state) screen)]
-    (if (and next-step?
-             (seq scroll-front))
-      (as-> screen s
-            (update-in s [:state :scrollback] conj ((comp :current-state :storyteller) s))
-            (assoc-in s [:state :next-step?] false)
-            (assoc-in s [:storyteller :current-state] ((comp first :scrollfront :state) s))
-            (assoc-in s [:storyteller :done?] false)
-            (assoc-in s [:storyteller :first?] true)
-            (assoc-in s [:state :scrollfront] ((comp rest :scrollfront :state) s)))
-      screen)))
+    (cond-> screen
+            (and next-step? (seq scroll-front))
+            (as-> s ; TODO This is super ugly!!!
+                  (update-in s [:state :scrollback] conj ((comp :current-state :storyteller) s))
+                  (assoc-in s [:state :next-step?] false)
+                  (assoc-in s [:storyteller :current-state] ((comp first :scrollfront :state) s))
+                  (assoc-in s [:storyteller :done?] false)
+                  (assoc-in s [:storyteller :first?] true)
+                  (assoc-in s [:state :scrollfront] ((comp rest :scrollfront :state) s))))))
 
 (defn evaluate
   [screen]

@@ -20,211 +20,218 @@
 ; when the storyscreen receives such jump from the storyteller, it simply passes the new
 ; state to the storyteller and keeps going
 
+;(.log js/console (str "Added: " (pr-str (:current-state storyteller)))) ; TODO - debug flag
 (defn init-new
-  [storyteller new?]
-  (if new?
-    (do
-      ;(.log js/console (str "Added: " (pr-str (:current-state storyteller)))) ; TODO - debug flag
-      (assoc storyteller :state {} :done? false :timer 0))
-    storyteller))
+  [screen new?]
+  (cond-> screen
+          new?
+          (update-in [:storyteller] merge {:state {} :done? false :timer 0})))
 
 (defn init-dialogue-state
-  [state storyteller]
-  [state
-   (if (:first? storyteller)
-     (-> storyteller
-         (assoc-in [:state :cps] (:cps state))
-         (assoc-in [:state :end?] false))
-     storyteller)])
+  [{:keys [storyteller state] :as screen}]
+  (cond-> screen
+          (:first? storyteller)
+          (update-in [:storyteller :state] merge {:cps (:cps state)
+                                                  :end? false})))
 
 (defn update-dialogue
-  [state storyteller]
-  [state
-   (let [{:keys [current-state timer]} storyteller
-         {:keys [cps end? display-message]} (:state storyteller)
-         {:keys [input-state]} state
-         message (first (:messages current-state))
-         cpms (if (zero? cps) 0
-                (/ 1000 cps)) ; TODO fix this shit
-         char-count (if (zero? cpms) 10000
-                      (int (/ timer cpms)))]
+  [{:keys [state storyteller] :as screen}]
+  (let [{{current-state :current-state
+          timer :timer
+          {:keys [cps end? display-message]} :state} :storyteller
+         {:keys [input-state]} :state} screen
+        message (first (:messages current-state))
+        cpms (if (zero? cps) 0 (/ 1000 cps)) ; TODO fix this shit
+        char-count (if (zero? cpms) 10000 (int (/ timer cpms)))]
      (cond
       end?
-        (-> storyteller
-            (assoc-in [:state :display-message] message)
-            (assoc :done? ((comp :clicked :mouse) input-state)))
-      ((comp :clicked :mouse) input-state)
-        (-> storyteller
-            (assoc-in [:state :display-message] message)
-            (assoc-in [:state :end?] true))
+        (-> screen
+            (assoc-in [:storyteller :state :display-message] message)
+            (assoc-in [:storyteller :done?] (get-in input-state [:mouse :clicked])))
+      (get-in input-state [:mouse :clicked])
+        (update-in screen [:storyteller :state]
+                   merge {:display-message message :end? true})
       (> char-count (count message))
-        (-> storyteller
-            (assoc-in [:state :display-message] message)
-            (assoc-in [:state :end?] true))
+        (update-in screen [:storyteller :state]
+                   merge {:display-message message :end? true})
       :else ; Update display-message according to cps
-        (assoc-in storyteller [:state :display-message]
-                  (clojure.string/join (take char-count message)))))])
+        (assoc-in screen [:storyteller :state :display-message]
+                  (clojure.string/join (take char-count message))))))
 
 (defn init-explicit-choice
-  [state storyteller]
-  [state
-   (if (:first? storyteller)
-     (-> storyteller
-         (assoc-in [:state :choice-text] ((comp :text :current-state) storyteller))
-         (assoc-in [:state :option-names] (keys ((comp :options :current-state) storyteller))))
-     storyteller)])
+  [{:keys [storyteller state] :as screen}]
+  (cond-> screen
+          (:first? storyteller)
+          (update-in [:state]
+                     merge {:choice-text (get-in storyteller [:current-state :text])
+                            :option-name (keys (get-in storyteller [:current-state :options]))})))
 
 (defn update-explicit-choice
-  [state storyteller]
-  (if ((comp :clicked :mouse :input-state) state)
-    (let [{:keys [y]} ((comp :mouse :input-state) state)
-          options ((comp :option-names :state) storyteller)]
-      (loop [opts options acc 0]
-        (let [y-base (+ 285 (* acc 45))]
-          (cond
-           (or (empty? opts) (>= acc (count options)))
-             [state storyteller]
-           (< y-base y (+ y-base 44))
-             (let [next (as-> storyteller s
-                              ((comp :options :current-state)s )
-                              (s (first opts))
-                              ((comp :body :jump) s))]
-               [(assoc state :scrollfront next) (assoc storyteller :done? true)])
-           :else
-             (recur (rest opts) (inc acc))))))
-    [state storyteller]))
+  [screen]
+  (cond-> screen
+          (get-in screen [:state :input-state :mouse :clicked])
+          ((fn [{:keys [storyteller state]}]
+             (let [y (get-in state [:input-state :mouse :y])
+                   options (get-in storyteller [:state :option-names])]
+               (loop [opts options acc 0]
+                 (let [y-base (+ 285 (* acc 45))]
+                   (cond
+                    (or (empty? opts) (>= acc (count options))) screen
+                    (< y-base y (+ y-base 44))
+                      (let [next (-> storyteller
+                                     (get-in [:current-state :options])
+                                     ((fn [s] (s (first opts))))
+                                     (get-in [:jump :body]))]
+                        (-> screen
+                            (assoc-in [:state :scrollfront] next)
+                            (assoc-in [:storyteller :done?] true)))
+                    :else
+                      (recur (rest opts) (inc acc))))))))))
 
+; TODO - change this into self-hosting parsing with :update
 (defn parse-event
-  [state storyteller]
-  (let [step (:current-state storyteller)]
+  [screen]
+  (let [{{step :current-state} :storyteller} screen]
     (cond
      (= :function (:type step))
-       (let [hooks (:runtime-hooks storyteller)
-             fn-id (:hook step)
-             params (:params step)]
-         (apply (fn-id hooks) state storyteller params))
+       (let [{{hooks :runtime-hooks} :storyteller} screen
+             {fn-id :hook params :params} step]
+         (apply (fn-id hooks) screen params))
      (= :implicit-choice (:type step))
-       [state storyteller]
+       screen
      (= :explicit-choice (:type step))
-       (->> [state storyteller]
-            (apply init-explicit-choice)
-            (apply update-explicit-choice))
+       (-> screen
+           (init-explicit-choice)
+           (update-explicit-choice))
      (= :speech (:type step))
-       (->> [state storyteller]
-            (apply init-dialogue-state)
-            (apply update-dialogue))
+       (-> screen
+           (init-dialogue-state)
+           (update-dialogue))
      (= :dummy (:type step))
        (do
          (.log js/console "Dummy step")
-         [state storyteller])
+         screen)
      :else
        (do
          (.log js/console "Storyteller: ")
-         (.log js/console (pr-str storyteller))
+         (.log js/console (pr-str (:storyteller screen))
          (.log js/console "State: ")
-         (.log js/console (pr-str state))
-         (throw (js/Error. (str "Error: unknown type -> " (pr-str (:type step)))))))))
+         (.log js/console (pr-str (:state screen))
+         (.log js/console "Screen: ")
+         (.log js/console (pr-str (dissoc screen :state :storyteller)))
+         (throw (js/Error. (str "Error: unknown type -> " (pr-str (:type step)))))))))))
 
 (defn update
-  [{:keys [storyteller state] :as screen} elapsed-time]
-  (if-not (:done? storyteller)
-    (let [new? (:first? storyteller)
-          temp-storyteller (-> storyteller
-                               (init-new new?)
-                               (update-in [:timer] + elapsed-time))
-          [new-state new-storyteller] (parse-event state temp-storyteller)]
-    (assoc screen
-      :storyteller (assoc new-storyteller :first? false)
-      :state new-state))
-    screen))
+  [screen elapsed-time]
+  (cond-> screen
+          (not (:done? (:storyteller screen)))
+          ((fn [{:keys [storyteller] :as screen}]
+             (let [new? (:first? storyteller)]
+               (-> screen
+                   (init-new new?)
+                   (update-in [:storyteller :timer] + elapsed-time)
+                   (parse-event)
+                   (assoc-in [:storyteller :first?] false)))))))
 
 ; RUNTIME HOOKS
 
 (defn add-sprite
-  [state storyteller id]
-  [(update-in state [:spriteset] conj id)
-   (assoc storyteller :done? true)])
+  [screen id]
+  (-> screen
+      (update-in [:state :spriteset] conj id)
+      (assoc-in [:storyteller :done?] true)))
 
 (defn remove-sprite
-  [state storyteller id]
-  [(update-in state [:spriteset] disj id)
-   (assoc storyteller :done? true)])
+  [screen id]
+  (-> screen
+      (update-in [:state :spriteset] disj id)
+      (assoc-in [:storyteller :done?] true)))
 
 (defn clear-sprites
-  [state storyteller id]
-  [(assoc state :spriteset #{})
-   (assoc storyteller :done? true)])
+  [screen id]
+  (-> screen
+      (assoc-in [:state :spriteset] #{})
+      (assoc-in [:storyteller :done?] true)))
 
 (defn teleport-sprite
-  [state storyteller id position]
-  [(assoc-in state [:sprites id :position] position)
-   (assoc storyteller :done? true)])
+  [screen id position]
+  (-> screen
+      (assoc-in [:state :sprites id :position] position)
+      (assoc-in [:storyteller :done?] true)))
 
 (defn decl-sprite
-  [state storyteller id img pos z-index]
-  [(assoc-in state [:sprites id] {:id img
-                                  :position pos
-                                  :z-index z-index})
-   (assoc storyteller :done? true)])
+  [screen id img pos z-index]
+  (-> screen
+      (assoc-in [:state :sprites id] {:id img
+                                      :position pos
+                                      :z-index z-index})
+      (assoc-in [:storyteller :done?] true)))
 
 (defn pop-background
-  [state storyteller]
-  [(update-in state [:backgrounds] rest)
-   (assoc storyteller :done? true)])
+  [screen]
+  (-> screen
+      (update-in [:state :backgrounds] rest)
+      (assoc-in [:storyteller :done?] true)))
 
 (defn push-background
-  [state storyteller id]
-  [(update-in state [:backgrounds] conj id)
-   (assoc storyteller :done? true)])
+  [screen id]
+  (-> screen
+      (update-in [:state :backgrounds] conj id)
+      (assoc-in [:storyteller :done?] true)))
 
 (defn clear-backgrounds
-  [state storyteller]
-  [(assoc state :backgrounds '())
-   (assoc storyteller :done? true)])
+  [screen]
+  (-> screen
+      (assoc-in [:state :backgrounds] '())
+      (assoc-in [:storyteller :done?] true)))
 
 (defn show-ui
-  [state storyteller]
-  [(assoc state :show-ui? true)
-   (assoc storyteller :done? true)])
+  [screen]
+  (-> screen
+      (assoc-in [:state :show-ui?] true)
+      (assoc-in [:storyteller :done?] true)))
 
 (defn hide-ui
-  [state storyteller]
-  [(assoc state :show-ui? false)
-   (assoc storyteller :done? true)])
+  [screen]
+  (-> screen
+      (assoc-in [:state :show-ui?] false)
+      (assoc-in [:storyteller :done?] true)))
 
 (defn set-ui
-  [state storyteller id pos]
-  [(-> state
-       (assoc-in [:ui-img :id] id)
-       (assoc-in [:ui-img :position] pos))
-   (assoc storyteller :done? true)])
+  [screen id pos]
+  (-> screen
+      (update-in [:state :ui-img] merge {:id id :position pos})
+      (assoc-in [:storyteller :done?] true)))
 
 (defn wait
-  [state storyteller msec]
-  (if (> msec (:timer storyteller))
-    [state storyteller]
-    [state
-     (assoc storyteller :done? true)]))
+  [screen msec]
+  (cond-> screen
+          (<= msec (get-in screen [:storyteller :timer]))
+          (assoc-in [:storyteller :done?] true)))
 
 (defn get-next-scene
-  [state storyteller scene]
-  [(assoc state :scrollfront (:body scene))
-   (assoc storyteller :done? true)])
+  [screen {:keys [body]}]
+  (-> screen
+      (assoc-in [:state :scrollfront] body)
+      (assoc-in [:storyteller :done?] true)))
 
 (defn set-cps
-  [state storyteller amount]
-  [(assoc state :cps amount)
-   (assoc storyteller :done? true)])
+  [screen amount]
+  (-> screen
+      (assoc-in [:state :cps] amount)
+      (assoc-in [:storyteller :done?] true)))
 
 (defn set-dialogue-bounds
-  [state storyteller x y w h]
-  [(assoc state :dialogue-bounds [x y w h])
-   (assoc storyteller :done? true)])
+  [screen x y w h]
+  (-> screen
+      (assoc-in [:state :dialogue-bounds] [x y w h])
+      (assoc-in [:storyteller :done?] true)))
 
 (defn set-nametag-position
-  [state storyteller pos]
-  [(assoc state :nametag-position pos)
-   (assoc storyteller :done? true)])
+  [screen pos]
+  (-> screen
+      (assoc-in [:state :nametag-position] pos)
+      (assoc-in [:storyteller :done?] true)))
 
 (def RT-HOOKS (atom {
                      :play-bgm (fn [state storyteller id]
