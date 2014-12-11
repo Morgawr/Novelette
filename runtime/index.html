@@ -1,21 +1,13 @@
 <html>
   <head>
-    <style media="myfont" type="text/css">
-      @font-face {
-        font-family: Sans-Serif;
-        font-weight: 400;
-      }
-    </style>
   </head>
   <body bgcolor="#000000">
     <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
-    <script type="text/javascript" src="js/novelette.js"></script>
+    <script type="text/javascript" src="js/game.js"></script>
     <font color="#FFFFFF">
-      <canvas id="surface" width="1280" height="720"></canvas>
+      <center><canvas id="surface" width="1280" height="720"></canvas></center>
     </font>
-    <font color="#FF0000"></font>
     <script>
-      novelette.core.connect();
-      novelette.core.init();
+      game.core.init();
     </script>
   </body>

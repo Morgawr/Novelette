@@ -19,6 +19,8 @@
                    bgm ; background music
                    ])
 
+; TODO - purge a lot of old data and cruft
+
 (def BASE-SCREEN (Screen. "" nil nil nil nil [] nil nil nil nil))
 
 (defrecord State [screen-list curr-time context canvas])
@@ -48,7 +50,7 @@
         render (:render screen)
         input (:handle-input screen)]
     (-> screen
-        (input on-top @novelette.input/MOUSE-STATE)
+        (input on-top @novelette.input/MOUSE-STATE) ; TODO: work on whole input, not just mouse
         (update on-top elapsed-time)
         (render on-top))))
 

@@ -7,6 +7,9 @@
             [novelette.utils :as utils]
             [clojure.string :as string]))
 
+; TODO - Move on-top and elapse-time into the screen structure
+; TODO - Stop using ((comp :keywords) data) and start using get-in, dumbass
+
 ; This is the storytelling state of the game. It is an object containing the whole set of
 ; past, present and near-future state. It keeps track of stateful actions like scrollback,
 ; sprites being rendered, bgm playing and other stuff. Ideally, it should be easy to
@@ -48,7 +51,7 @@
   (let [next-step? ((comp :next-step? :state) screen)
         scroll-front ((comp :scrollfront :state) screen)]
     (if (and next-step?
-             (not (empty? scroll-front)))
+             (seq scroll-front))
       (as-> screen s
             (update-in s [:state :scrollback] conj ((comp :current-state :storyteller) s))
             (assoc-in s [:state :next-step?] false)
@@ -60,9 +63,9 @@
 
 (defn evaluate
   [screen]
-  (if (:done? (:storyteller screen))
-    (assoc-in screen [:state :next-step?] true)
-    screen))
+  (cond-> screen
+          ((comp :done? :storyteller) screen)
+          (assoc-in [:state :next-step?] true)))
 
 (defn update-cursor
   [{:keys [state] :as screen} elapsed-time]
@@ -73,15 +76,18 @@
       (assoc-in screen [:state :cursor-delta]
                 (+ cursor-delta elapsed-time)))))
 
+(defn update-gui
+  [screen elapsed-time]
+  (update-cursor screen elapsed-time)) ; TODO - move this into the GUI
+
 (defn update
   [screen on-top elapsed-time]
-  (if on-top
-    (-> screen
-        (advance-step)
-        (s/update elapsed-time)
-        (update-cursor elapsed-time)
-        (evaluate))
-    screen))
+  (cond-> screen
+          on-top
+          (-> (advance-step)
+              (s/update elapsed-time)
+              (update-gui elapsed-time)
+              (evaluate)))) ; TODO - this step has to be removed
 
 (defn render-dialogue
   [{:keys [state storyteller context] :as screen}]
@@ -113,25 +119,25 @@
                      (< 400 cursor-delta 501) 2
                      :else 0)]
     (.save context)
-    (set! (. context -shadowColor) "black")
-    (set! (. context -shadowOffsetX) 1.5)
-    (set! (. context -shadowOffsetY) 1.5)
+    (set! (.-shadowColor context) "black")
+    (set! (.-shadowOffsetX context) 1.5)
+    (set! (.-shadowOffsetY context) 1.5)
     (doseq [[s i] iterators]
       (r/draw-text context [x (+ y (* i 35))] s "25px" "white"))
     (when-not (nil? (last lines))
       (r/draw-text-with-cursor context [x (+ y (* (dec (count lines)) 35))]
                                (last lines)
                                "25px" "white" cursor offset))
-    (when-not (empty? nametag)
+    (when (seq nametag)
       (r/draw-text context nametag-position nametag "bold 29px" (name namecolor))))
     (.restore context))
 
 (defn render-choice
   [{:keys [state storyteller context] :as screen}]
   (.save context)
-  (set! (. context -shadowColor) "black")
-  (set! (. context -shadowOffsetX) 1.5)
-  (set! (. context -shadowOffsetY) 1.5)
+  (set! (.-shadowColor context) "black")
+  (set! (.-shadowOffsetX context) 1.5)
+  (set! (.-shadowOffsetY context) 1.5)
   (let [name ((comp :choice-text :state) storyteller)
         options ((comp :option-names :state) storyteller)
         pos-w (int (/ (r/measure-text-length context name) 2))]
@@ -141,7 +147,7 @@
       (r/draw-text context [(- 620 pos-w) (+ 285 (* i 45))] s "20px" "white")))
   (.restore context))
 
-(defn render
+(defn render ; TODO - move this to GUI
   [{:keys [state context] :as screen} on-top]
   (let [bgs (reverse (:backgrounds state))
         sps (if (seq (:spriteset state)) (utils/sort-z-index ((apply juxt (:spriteset state)) (:sprites state))) [])]
@@ -158,11 +164,11 @@
         (render-choice screen))))
   screen)
 
-(defn handle-input
+(defn handle-input ; TODO - send events to GUI hooks
   [screen on-top mouse]
-  (if on-top
-    (assoc-in screen [:state :input-state :mouse] mouse)
-    screen))
+  (cond->
+   screen
+   on-top (assoc-in [:state :input-state :mouse] mouse)))
 
 (defn init
   [ctx canvas gamestate]
