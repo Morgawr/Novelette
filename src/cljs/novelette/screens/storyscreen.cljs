@@ -8,7 +8,6 @@
             [clojure.string :as string]))
 
 ; TODO - Move on-top and elapse-time into the screen structure
-; TODO - Stop using ((comp :keywords) data) and start using get-in, dumbass
 
 ; This is the storytelling state of the game. It is an object containing the whole set of
 ; past, present and near-future state. It keeps track of stateful actions like scrollback,
@@ -48,22 +47,22 @@
 
 (defn advance-step
   [screen]
-  (let [next-step? ((comp :next-step? :state) screen)
-        scroll-front ((comp :scrollfront :state) screen)]
+  (let [next-step? (get-in screen [:state :next-step?])
+        scroll-front (get-in screen [:state :scrollfront])]
     (cond-> screen
             (and next-step? (seq scroll-front))
             (as-> s ; TODO This is super ugly!!!
-                  (update-in s [:state :scrollback] conj ((comp :current-state :storyteller) s))
+                  (update-in s [:state :scrollback] conj (get-in s [:storyteller :current-state]))
                   (assoc-in s [:state :next-step?] false)
-                  (assoc-in s [:storyteller :current-state] ((comp first :scrollfront :state) s))
+                  (assoc-in s [:storyteller :current-state] (first (get-in s [:state :scrollfront :state])))
                   (assoc-in s [:storyteller :done?] false)
                   (assoc-in s [:storyteller :first?] true)
-                  (assoc-in s [:state :scrollfront] ((comp rest :scrollfront :state) s))))))
+                  (assoc-in s [:state :scrollfront] (rest (get-in s [:state :scrollfront])))))))
 
 (defn evaluate
   [screen]
   (cond-> screen
-          ((comp :done? :storyteller) screen)
+          (get-in screen [:storyteler :done?])
           (assoc-in [:state :next-step?] true)))
 
 (defn update-cursor
@@ -94,19 +93,19 @@
                 dialogue-bounds nametag-position]} state
         [x y w h] dialogue-bounds
         step (+ 30 (int (/ w (r/measure-text-length context "m"))))
-        words (string/split ((comp :display-message :state) storyteller) #"\s")
-        nametag ((comp :name :current-state) storyteller)
-        namecolor ((comp :color :current-state) storyteller)
-        lines (if (> (count words) 1)
-                     (loop [ws '() acc [] curr words]
-                       (cond
-                        (empty? curr)
-                          (reverse (conj ws (string/join " " acc)))
-                        (< step (count (string/join " " (conj acc (first curr)))))
-                          (recur (conj ws (string/join " " acc)) [] curr)
-                        :else
-                          (recur ws (conj acc (first curr)) (rest curr))))
-                     words)
+        words (string/split (get-in storyteller [:state :display-message] storyteller) #"\s")
+        {{nametag :name
+          namecolor :color} :current-state} storyteller
+        lines (cond-> words
+                      (> (count words) 1)
+                      ((fn [curr ws acc]
+                         (cond
+                          (empty? curr)
+                            (reverse (conj ws (string/join " " acc)))
+                          (< step (count (string/join " " (conj acc (first curr)))))
+                            (recur curr (conj ws (string/join " " acc)) [] )
+                          :else
+                            (recur (rest curr) ws (conj acc (first curr))))) '() []))
         iterators (zipmap (drop-last lines) (range (count (drop-last lines))))
         offset (cond (< 0 cursor-delta 101) -2
                      (or (< 100 cursor-delta 201)
@@ -137,8 +136,8 @@
   (set! (.-shadowColor context) "black")
   (set! (.-shadowOffsetX context) 1.5)
   (set! (.-shadowOffsetY context) 1.5)
-  (let [name ((comp :choice-text :state) storyteller)
-        options ((comp :option-names :state) storyteller)
+  (let [{{name :choice-text
+          options :option-names} :state} storyteller
         pos-w (int (/ (r/measure-text-length context name) 2))]
     (r/draw-image context [415 180] :choicebg)
     (r/draw-text-centered context [680 220] name "25px" "white")
@@ -157,11 +156,11 @@
         (r/draw-sprite context s))
       (when (:show-ui? state)
         (r/draw-sprite context (:ui-img state)))
-      (when ((comp :display-message :state :storyteller) screen)
+      (when (get-in screen [:storyteller :state :display-message])
         (render-dialogue screen))
-      (when ((comp :choice-text :state :storyteller) screen)
+      (when (get-in screen [:storyteller :state :choice-text])
         (render-choice screen))))
-  screen)
+  screen) ; TODO This might just return nothing? render in any case shouldn't be stateful
 
 (defn handle-input ; TODO - send events to GUI hooks
   [screen on-top mouse]
