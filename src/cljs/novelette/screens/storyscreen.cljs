@@ -62,7 +62,7 @@
 (defn evaluate
   [screen]
   (cond-> screen
-          (get-in screen [:storyteler :done?])
+          (get-in screen [:storyteller :done?])
           (assoc-in [:state :next-step?] true)))
 
 (defn update-cursor
