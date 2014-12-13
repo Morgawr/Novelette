@@ -240,13 +240,19 @@
       (assoc-in [:state :nametag-position] pos)
       (advance-step)))
 
+(defn play-bgm
+  [screen id]
+  (s/play-bgm id)
+  (advance-step screen))
+
+(defn stop-bgm
+  [screen]
+  (s/stop-bgm)
+  (advance-step screen))
+
 (def RT-HOOKS (atom {
-                     :play-bgm (fn [screen id]
-                                 (s/play-bgm id)
-                                 (advance-step screen)) ; TODO remove from here
-                     :stop-bgm (fn [screen]
-                                 (s/stop-bgm)
-                                 (advance-step screen)) ; TODO remove from here
+                     :play-bgm play-bgm
+                     :stop-bgm stop-bgm
                      :add-sprite add-sprite
                      :remove-sprite remove-sprite
                      :teleport-sprite teleport-sprite
