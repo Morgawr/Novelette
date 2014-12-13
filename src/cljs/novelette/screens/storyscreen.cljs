@@ -7,13 +7,13 @@
             [novelette.utils :as utils]
             [clojure.string :as string]))
 
-; TODO - Move on-top and elapse-time into the screen structure
+; TODO - Move on-top and elapsed-time into the screen structure
 
 ; This is the storytelling state of the game. It is an object containing the whole set of
 ; past, present and near-future state. It keeps track of stateful actions like scrollback,
 ; sprites being rendered, bgm playing and other stuff. Ideally, it should be easy to
 ; save/load transparently.
-(defrecord State [scrollback ; Complete history of events for scrollback purposes, as a stack.
+(defrecord State [scrollback ; Complete history of events for scrollback purposes, as a stack (this should contain the previous state of the storyscreen too)
                   scrollfront ; Stack of events yet to be interpreted.
                   spriteset ; Set of sprite id currently displayed on screen.
                   sprites ; Map of sprites globally defined on screen.
@@ -45,27 +45,7 @@
                         (Sprite. :dialogue-ui [0 0] 0) {} :cursor 0
                         [0 0 0 0] [0 0]))
 
-(defn advance-step
-  [screen]
-  (let [next-step? (get-in screen [:state :next-step?])
-        scroll-front (get-in screen [:state :scrollfront])]
-    (cond-> screen
-            (and next-step? (seq scroll-front))
-            (as-> s ; TODO This is super ugly!!!
-                  (update-in s [:state :scrollback] conj (get-in s [:storyteller :current-state]))
-                  (assoc-in s [:state :next-step?] false)
-                  (assoc-in s [:storyteller :current-state] (first (get-in s [:state :scrollfront :state])))
-                  (assoc-in s [:storyteller :done?] false)
-                  (assoc-in s [:storyteller :first?] true)
-                  (assoc-in s [:state :scrollfront] (rest (get-in s [:state :scrollfront])))))))
-
-(defn evaluate
-  [screen]
-  (cond-> screen
-          (get-in screen [:storyteller :done?])
-          (assoc-in [:state :next-step?] true)))
-
-(defn update-cursor
+(defn update-cursor ; TODO - move this into the GUI
   [{:keys [state] :as screen} elapsed-time]
   (let [cursor-delta (:cursor-delta state)]
     (if (> (+ cursor-delta elapsed-time) 800)
@@ -82,10 +62,8 @@
   [screen on-top elapsed-time]
   (cond-> screen
           on-top
-          (-> (advance-step)
-              (s/update elapsed-time)
-              (update-gui elapsed-time)
-              (evaluate)))) ; TODO - this step has to be removed
+          (-> (s/update elapsed-time)
+              (update-gui elapsed-time))))
 
 (defn render-dialogue
   [{:keys [state storyteller context] :as screen}]
@@ -95,7 +73,7 @@
         step (+ 30 (int (/ w (r/measure-text-length context "m"))))
         words (string/split (get-in storyteller [:state :display-message] storyteller) #"\s")
         {{nametag :name
-          namecolor :color} :current-state} storyteller
+          namecolor :color} :current-token} storyteller ; TODO refactor this
         lines (cond-> words
                       (> (count words) 1)
                       ((fn [curr ws acc]
@@ -107,7 +85,7 @@
                           :else
                             (recur (rest curr) ws (conj acc (first curr))))) '() []))
         iterators (zipmap (drop-last lines) (range (count (drop-last lines))))
-        offset (cond (< 0 cursor-delta 101) -2
+        offset (cond (< 0 cursor-delta 101) -2 ; TODO - this is terrible I hate myself.
                      (or (< 100 cursor-delta 201)
                          (< 700 cursor-delta 801)) -1
                      (or (< 200 cursor-delta 301)
@@ -142,11 +120,13 @@
     (r/draw-image context [415 180] :choicebg)
     (r/draw-text-centered context [680 220] name "25px" "white")
     (doseq [[s i] (zipmap options (range (count options)))]
+      (.log js/console "HERE!")
       (r/draw-text context [(- 620 pos-w) (+ 285 (* i 45))] s "20px" "white")))
   (.restore context))
 
 (defn render ; TODO - move this to GUI
   [{:keys [state context] :as screen} on-top]
+  (.save context)
   (let [bgs (reverse (:backgrounds state))
         sps (if (seq (:spriteset state)) (utils/sort-z-index ((apply juxt (:spriteset state)) (:sprites state))) [])]
     (doseq [s bgs]
@@ -164,9 +144,8 @@
 
 (defn handle-input ; TODO - send events to GUI hooks
   [screen on-top mouse]
-  (cond->
-   screen
-   on-top (assoc-in [:state :input-state :mouse] mouse)))
+  (cond-> screen
+          on-top (assoc-in [:state :input-state :mouse] mouse)))
 
 (defn init
   [ctx canvas gamestate]
@@ -180,5 +159,5 @@
     :canvas canvas
     :deinit (fn [s] nil)
     :state gamestate
-    :storyteller (s/StoryTeller. @s/RT-HOOKS {:type :dummy} 0 {} false true)
+    :storyteller (s/StoryTeller. @s/RT-HOOKS {:type :dummy} 0 {} false)
     }))

@@ -26,7 +26,7 @@
 
 (defn handle-input
   [screen mouse]
-  (if (and (:complete screen) (:clicked mouse) (not (:advance screen)))
+  (if (and (:complete screen) (:clicked? mouse) (not (:advance screen)))
     (assoc screen :advance true)
     screen))
 

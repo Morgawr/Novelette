@@ -2,6 +2,8 @@
 ; syntactical engine.
 (ns novelette.syntax)
 
+; TODO - add an optional init function?
+
 (defmacro parse-format
   [s]
   `(loop [messages# '() actions# '() remaining# ~s]

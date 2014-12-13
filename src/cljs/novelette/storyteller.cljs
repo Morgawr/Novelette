@@ -6,26 +6,25 @@
             [clojure.string]))
 
 (defrecord StoryTeller [runtime-hooks ; Map of runtime hooks to in-text macros
-                        current-state ; Current state to parse.
-                        timer ; Amount of milliseconds passed since last state transition
+                        current-token ; Current token to parse.
+                        timer ; Amount of milliseconds passed since last token transition
                         state ; Local storyteller state for transitioning events
-                        first? ; Is this the first frame for this state?
-                        done? ; Are we done processing this state?
+                        first? ; Is this the first frame for this state? TODO - I dislike this, I need a better option.
                         ])
 
-; storyteller just takes a stack of instructions and executes them in order
-; when it's done it sends the data back to the story screen and if the stack is over
-; it returns the name of the last instruction (possibly a jump to a new state or screen)
-;
-; when the storyscreen receives such jump from the storyteller, it simply passes the new
-; state to the storyteller and keeps going
+; storyteller just takes a stack of instructions and executes them in order.
+; It constantly fetches tokens from the script and interprets them. When it requires a user
+; action or some time to pass (or other interactive stuff), it yields back to the storyscreen
+; which continues with the rendering and updating.
 
-;(.log js/console (str "Added: " (pr-str (:current-state storyteller)))) ; TODO - debug flag
+;(.log js/console (str "Added: " (pr-str (:current-token storyteller)))) ; TODO - debug flag
 (defn init-new
-  [screen new?]
-  (cond-> screen
-          new?
-          (update-in [:storyteller] merge {:state {} :done? false :timer 0})))
+  [screen]
+  (update-in screen [:storyteller] merge {:state {} :first? true :timer 0}))
+
+(defn mark-initialized
+  [screen]
+  (assoc-in screen [:storyteller :first?] false))
 
 (defn init-dialogue-state
   [{:keys [storyteller state] :as screen}]
@@ -34,83 +33,91 @@
           (update-in [:storyteller :state] merge {:cps (:cps state)
                                                   :end? false})))
 
+(defn advance-step
+  ([{:keys [storyteller state] :as screen} yield?]
+   [(-> screen
+        (assoc-in [:storyteller :current-token] (first (:scrollfront state))) ; TODO - add support for end-of-script
+        (update-in [:state :scrollback] conj (:current-token storyteller)) ; TODO - conj entire state screen onto history
+        (update-in [:state :scrollfront] rest)
+        (init-new)) yield?])
+  ([screen] (advance-step screen false)))
+
 (defn update-dialogue
   [{:keys [state storyteller] :as screen}]
-  (let [{{current-state :current-state
-          timer :timer
+  (let [{{current-token :current-token timer :timer
           {:keys [cps end? display-message]} :state} :storyteller
          {:keys [input-state]} :state} screen
-        message (first (:messages current-state))
+        message (first (:messages current-token))
         cpms (if (zero? cps) 0 (/ 1000 cps)) ; TODO fix this shit
-        char-count (if (zero? cpms) 10000 (int (/ timer cpms)))]
+        char-count (if (zero? cpms) 10000 (int (/ timer cpms)))
+        clicked? (get-in input-state [:mouse :clicked?])]
      (cond
       end?
-        (-> screen
-            (assoc-in [:storyteller :state :display-message] message)
-            (assoc-in [:storyteller :done?] (get-in input-state [:mouse :clicked])))
-      (get-in input-state [:mouse :clicked])
-        (update-in screen [:storyteller :state]
-                   merge {:display-message message :end? true})
-      (> char-count (count message))
-        (update-in screen [:storyteller :state]
-                   merge {:display-message message :end? true})
+        (let [next (assoc-in screen [:storyteller :state :display-message] message)]
+          (if clicked?
+            (advance-step next true)
+            [next true]))
+      (or clicked? (> char-count (count message)))
+        [(update-in screen [:storyteller :state] merge {:display-message message :end? true}) true]
       :else ; Update display-message according to cps
-        (assoc-in screen [:storyteller :state :display-message]
-                  (clojure.string/join (take char-count message))))))
+        [(assoc-in screen [:storyteller :state :display-message]
+                   (clojure.string/join (take char-count message))) true])))
 
 (defn init-explicit-choice
   [{:keys [storyteller state] :as screen}]
   (cond-> screen
           (:first? storyteller)
-          (update-in [:state]
-                     merge {:choice-text (get-in storyteller [:current-state :text])
-                            :option-name (keys (get-in storyteller [:current-state :options]))})))
+          (update-in [:storyteller :state]
+                     merge {:choice-text (get-in storyteller [:current-token :text])
+                            :option-names (keys (get-in storyteller [:current-token :options]))})))
 
 (defn update-explicit-choice
   [screen]
-  (cond-> screen
-          (get-in screen [:state :input-state :mouse :clicked])
-          ((fn [{:keys [storyteller state]}]
-             (let [y (get-in state [:input-state :mouse :y])
-                   options (get-in storyteller [:state :option-names])]
-               (loop [opts options acc 0]
-                 (let [y-base (+ 285 (* acc 45))]
-                   (cond
-                    (or (empty? opts) (>= acc (count options))) screen
-                    (< y-base y (+ y-base 44))
-                      (let [next (-> storyteller
-                                     (get-in [:current-state :options])
-                                     ((fn [s] (s (first opts))))
-                                     (get-in [:jump :body]))]
-                        (-> screen
-                            (assoc-in [:state :scrollfront] next)
-                            (assoc-in [:storyteller :done?] true)))
-                    :else
-                      (recur (rest opts) (inc acc))))))))))
+  (if (get-in screen [:state :input-state :mouse :clicked?])
+    (let [{:keys [storyteller state]} screen]
+      (let [y (get-in state [:input-state :mouse :y])
+            options (get-in storyteller [:state :option-names])]
+        (loop [opts options acc 0]
+          (let [y-base (+ 285 (* acc 45))]
+            (cond
+             (or (empty? opts) (>= acc (count options))) [screen true]
+             (< y-base y (+ y-base 44))
+               (let [next (-> storyteller
+                              (get-in [:current-token :options])
+                              ((fn [s] (s (first opts))))
+                              (get-in [:jump :body]))]
+                 (-> screen
+                     (assoc-in [:state :scrollfront] next)
+                     (advance-step true)))
+             :else
+               (recur (rest opts) (inc acc)))))))
+    [screen true]))
 
-; TODO - change this into self-hosting parsing with :update
+; XXX - change this into self-hosted parsing with :update, maybe.
 (defn parse-event
   [screen]
-  (let [{{step :current-state} :storyteller} screen]
+  (let [{{step :current-token} :storyteller} screen]
     (cond
      (= :function (:type step))
        (let [{{hooks :runtime-hooks} :storyteller} screen
              {fn-id :hook params :params} step]
          (apply (fn-id hooks) screen params))
      (= :implicit-choice (:type step))
-       screen
+       [screen false] ; TODO - Add implicit choices.
      (= :explicit-choice (:type step))
        (-> screen
            (init-explicit-choice)
+           (mark-initialized)
            (update-explicit-choice))
      (= :speech (:type step))
        (-> screen
            (init-dialogue-state)
+           (mark-initialized)
            (update-dialogue))
      (= :dummy (:type step))
        (do
          (.log js/console "Dummy step")
-         screen)
+         (advance-step screen))
      :else
        (do
          (.log js/console "Storyteller: ")
@@ -122,16 +129,14 @@
          (throw (js/Error. (str "Error: unknown type -> " (pr-str (:type step)))))))))))
 
 (defn update
-  [screen elapsed-time]
-  (cond-> screen
-          (not (:done? (:storyteller screen)))
-          ((fn [{:keys [storyteller] :as screen}]
-             (let [new? (:first? storyteller)]
-               (-> screen
-                   (init-new new?)
-                   (update-in [:storyteller :timer] + elapsed-time)
-                   (parse-event)
-                   (assoc-in [:storyteller :first?] false)))))))
+  [{:keys [storyteller] :as screen} elapsed-time]
+  (-> screen
+      (update-in [:storyteller :timer] + elapsed-time)
+      ((fn [screen yield?]
+         (cond
+          yield? screen
+          :else (let [[screen yield?] (parse-event screen)]
+                  (recur screen yield?)))) false)))
 
 ; RUNTIME HOOKS
 
@@ -139,25 +144,25 @@
   [screen id]
   (-> screen
       (update-in [:state :spriteset] conj id)
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn remove-sprite
   [screen id]
   (-> screen
       (update-in [:state :spriteset] disj id)
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn clear-sprites
   [screen id]
   (-> screen
       (assoc-in [:state :spriteset] #{})
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn teleport-sprite
   [screen id position]
   (-> screen
       (assoc-in [:state :sprites id :position] position)
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn decl-sprite
   [screen id img pos z-index]
@@ -165,81 +170,83 @@
       (assoc-in [:state :sprites id] {:id img
                                       :position pos
                                       :z-index z-index})
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn pop-background
   [screen]
   (-> screen
       (update-in [:state :backgrounds] rest)
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn push-background
   [screen id]
   (-> screen
       (update-in [:state :backgrounds] conj id)
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn clear-backgrounds
   [screen]
   (-> screen
       (assoc-in [:state :backgrounds] '())
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn show-ui
   [screen]
   (-> screen
       (assoc-in [:state :show-ui?] true)
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn hide-ui
   [screen]
   (-> screen
       (assoc-in [:state :show-ui?] false)
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn set-ui
   [screen id pos]
   (-> screen
       (update-in [:state :ui-img] merge {:id id :position pos})
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn wait
   [screen msec]
-  (cond-> screen
-          (<= msec (get-in screen [:storyteller :timer]))
-          (assoc-in [:storyteller :done?] true)))
+  (cond
+   (<= msec (get-in screen [:storyteller :timer]))
+     (advance-step screen)
+   :else
+     [screen true]))
 
 (defn get-next-scene
   [screen {:keys [body]}]
   (-> screen
       (assoc-in [:state :scrollfront] body)
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn set-cps
   [screen amount]
   (-> screen
       (assoc-in [:state :cps] amount)
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn set-dialogue-bounds
   [screen x y w h]
   (-> screen
       (assoc-in [:state :dialogue-bounds] [x y w h])
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (defn set-nametag-position
   [screen pos]
   (-> screen
       (assoc-in [:state :nametag-position] pos)
-      (assoc-in [:storyteller :done?] true)))
+      (advance-step)))
 
 (def RT-HOOKS (atom {
                      :play-bgm (fn [screen id]
                                  (s/play-bgm id)
-                                 (assoc-in screen [:storyteller :done?] true))
+                                 (advance-step screen)) ; TODO remove from here
                      :stop-bgm (fn [screen]
                                  (s/stop-bgm)
-                                 (assoc-in screen [:storyteller :done?] true))
+                                 (advance-step screen)) ; TODO remove from here
                      :add-sprite add-sprite
                      :remove-sprite remove-sprite
                      :teleport-sprite teleport-sprite

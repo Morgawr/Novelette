@@ -4,7 +4,7 @@
 
 (def MOUSE-STATE (atom {:x 0
                         :y 0
-                        :clicked false
+                        :clicked? false
                         }))
 
 (def BOUNDING-BOX (atom nil))
@@ -20,11 +20,11 @@
 
 (defn mouse-click-listener
   [event]
-  (swap! MOUSE-STATE assoc :clicked true))
+  (swap! MOUSE-STATE assoc :clicked? true))
 
 (defn mouse-declick
   []
-  (swap! MOUSE-STATE assoc :clicked false))
+  (swap! MOUSE-STATE assoc :clicked? false))
 
 (defn init
   [canvas]
