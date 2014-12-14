@@ -2,7 +2,6 @@
   (:require [novelette.render :as r]
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
-            novelette.screens.dialoguescreen
             [novelette.storyteller :as s]
             [novelette.utils :as utils]
             [clojure.string :as string]))
