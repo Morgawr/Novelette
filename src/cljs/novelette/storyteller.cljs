@@ -50,7 +50,7 @@
         message (first (:messages current-token))
         cpms (if (zero? cps) 0 (/ 1000 cps)) ; TODO fix this shit
         char-count (if (zero? cpms) 10000 (int (/ timer cpms)))
-        clicked? (get-in input-state [:mouse :clicked?])]
+        clicked? (get-in input-state [:clicked? 0])]
      (cond
       end?
         (let [next (assoc-in screen [:storyteller :state :display-message] message)]
@@ -73,9 +73,9 @@
 
 (defn update-explicit-choice
   [screen]
-  (if (get-in screen [:state :input-state :mouse :clicked?])
+  (if (get-in screen [:state :input-state :clicked? 0])
     (let [{:keys [storyteller state]} screen]
-      (let [y (get-in state [:input-state :mouse :y])
+      (let [y (get-in state [:input-state :y])
             options (get-in storyteller [:state :option-names])]
         (loop [opts options acc 0]
           (let [y-base (+ 285 (* acc 45))]

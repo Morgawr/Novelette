@@ -25,15 +25,15 @@
      :else (js/alert "Your browser does not seem to support the proper audio standards. The game will not work."))))
 
 (defn handle-input
-  [screen mouse]
-  (if (and (:complete screen) (:clicked? mouse) (not (:advance screen)))
+  [screen input]
+  (if (and (:complete screen) ((:clicked? input) 0) (not (:advance screen)))
     (assoc screen :advance true)
     screen))
 
 (defn maybe-handle-input
-  [screen on-top mouse]
+  [screen on-top input]
   (if on-top
-    (handle-input screen mouse)
+    (handle-input screen input)
     screen))
 
 (defn load-main-menu

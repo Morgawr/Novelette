@@ -32,8 +32,11 @@
 ; :on-hover
 ; :off-hover
 
-
 (defn handle-input
+  "Handles the input on the GUI engine. It delves into the subtree branch
+  of the GUI element tree in a DFS and calls the appropriate handle-input
+  function for each element until one of them returns false and stops
+  propagating upwards."
   [screen]
   screen)
 
@@ -41,4 +44,13 @@
   [element]
   ((:render element) element)
   (doseq [x (reverse (sort-by :z-index (:children element)))]
+    ; This could cause a stack-overflow but the depth of the children tree
+    ; will never get that big. If it gets that big then you probably should
+    ; rethink your lifestyle and choices that brought you to do this in the
+    ; first place. Please be considerate with the amount of alcohol you drink
+    ; and don't do drugs.
+    ;
+    ; Tests on a (java) repl showed no stackoverflow until the tree reached
+    ; a level of 1000-1500 nested elements. I'm not sure about clojurescript's
+    ; stack but it shouldn't be worse... I hope.
     (render x)))

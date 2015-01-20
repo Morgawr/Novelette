@@ -93,7 +93,7 @@
                          (< 500 cursor-delta 601)) 1
                      (< 400 cursor-delta 501) 2
                      :else 0)]
-    (.save context)
+    (.save context) ; TODO - move this into the UI
     (set! (.-shadowColor context) "black")
     (set! (.-shadowOffsetX context) 1.5)
     (set! (.-shadowOffsetY context) 1.5)
@@ -119,7 +119,6 @@
     (r/draw-image context [415 180] :choicebg)
     (r/draw-text-centered context [680 220] name "25px" "white")
     (doseq [[s i] (zipmap options (range (count options)))]
-      (.log js/console "HERE!")
       (r/draw-text context [(- 620 pos-w) (+ 285 (* i 45))] s "20px" "white")))
   (.restore context))
 
@@ -142,9 +141,9 @@
   screen) ; TODO This might just return nothing? render in any case shouldn't be stateful
 
 (defn handle-input ; TODO - send events to GUI hooks
-  [screen on-top mouse]
+  [screen on-top input]
   (cond-> screen
-          on-top (assoc-in [:state :input-state :mouse] mouse)))
+          on-top (assoc-in [:state :input-state] input)))
 
 (defn init
   [ctx canvas gamestate]

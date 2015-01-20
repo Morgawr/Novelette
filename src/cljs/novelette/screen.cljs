@@ -50,7 +50,7 @@
         render (:render screen)
         input (:handle-input screen)]
     (-> screen
-        (input on-top @novelette.input/MOUSE-STATE) ; TODO: work on whole input, not just mouse
+        (input on-top @novelette.input/INPUT-STATE)
         (update on-top elapsed-time)
         (render on-top))))
 
