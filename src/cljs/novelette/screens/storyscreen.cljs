@@ -3,6 +3,7 @@
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
             [novelette.storyteller :as s]
+            [novelette.GUI :as g]
             [novelette.utils :as utils]
             [clojure.string :as string]))
 
@@ -158,4 +159,5 @@
     :deinit (fn [s] nil)
     :state gamestate
     :storyteller (s/StoryTeller. @s/RT-HOOKS {:type :dummy} 0 {} false)
+    :GUI (g/create-canvas-element canvas ctx)
     }))

@@ -41,8 +41,8 @@
   screen)
 
 (defn render
-  [element]
-  ((:render element) element)
+  [element ancestors]
+  ((:render element) element ancestors)
   (doseq [x (reverse (sort-by :z-index (:children element)))]
     ; This could cause a stack-overflow but the depth of the children tree
     ; will never get that big. If it gets that big then you probably should
@@ -53,4 +53,23 @@
     ; Tests on a (java) repl showed no stackoverflow until the tree reached
     ; a level of 1000-1500 nested elements. I'm not sure about clojurescript's
     ; stack but it shouldn't be worse... I hope.
-    (render x)))
+    (render x (conj ancestors element))))
+
+(defn render-gui
+  "Recursively calls into the registered elements render functions and displays
+  them on the screen."
+  [{:keys [GUI]}]
+  (render (:canvas GUI) '()))
+
+(defn create-canvas-element
+  "Creates a new canvas GUI element with sane defaults."
+  [canvas ctx]
+  (let [element (GUIElement. :canvas
+                             [0 0 (.-width canvas) (.-height canvas)]
+                             {:entity canvas :context ctx}
+                             [] ; no children yet
+                             {} ; no events yet
+                             true ; focus
+                             10000 ; very low priority in depth
+                             identity)] ; TODO - add render function for canvas
+    element))
