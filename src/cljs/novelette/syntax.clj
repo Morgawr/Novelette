@@ -220,3 +220,14 @@
   `{:type :function
     :hook :get-next-scene
     :params [~name]})
+
+(defmacro add-label
+  "Adds a label to the screen."
+  [id parent text position]
+  `{:type :add-label
+    :id ~id
+    :parent (if (nil? ~parent)
+              :canvas ~parent)
+    :text ~text
+    :position ~position
+    })
