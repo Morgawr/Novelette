@@ -128,7 +128,7 @@
          (.log js/console (pr-str (dissoc screen :state :storyteller)))
          (throw (js/Error. (str "Error: unknown type -> " (pr-str (:type step)))))))))))
 
-(defn update
+(defn screen-update
   [{:keys [storyteller] :as screen} elapsed-time]
   (-> screen
       (update-in [:storyteller :timer] + elapsed-time)

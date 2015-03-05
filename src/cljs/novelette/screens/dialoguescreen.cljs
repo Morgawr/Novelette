@@ -38,7 +38,7 @@
   (:letters screen)
   (inc (:letters screen))))
 
-(defn update
+(defn screen-update
   [screen elapsed-time]
   (let [adv (:advance screen)
         interval (:interval screen)
@@ -65,7 +65,7 @@
 
 (defn maybe-update
   [screen on-top elapsed-time]
-  (if on-top (update screen elapsed-time) screen))
+  (if on-top (screen-update screen elapsed-time) screen))
 
 (defn draw
   [screen]

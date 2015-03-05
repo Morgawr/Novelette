@@ -58,11 +58,11 @@
   [screen elapsed-time]
   (update-cursor screen elapsed-time)) ; TODO - move this into the GUI
 
-(defn update
+(defn screen-update
   [screen on-top elapsed-time]
   (cond-> screen
           on-top
-          (-> (s/update elapsed-time)
+          (-> (s/screen-update elapsed-time)
               (update-gui elapsed-time))))
 
 (defn render-dialogue
@@ -151,7 +151,7 @@
   (into gscreen/BASE-SCREEN
    {
     :id "StoryScreen"
-    :update update
+    :update screen-update
     :render render
     :handle-input handle-input
     :context ctx

@@ -76,7 +76,7 @@
   (doseq [[k v] (:audio-list screen)] (gsound/load-sound v k))
   (assoc screen :loading-status 1))
 
-(defn update
+(defn screen-update
   [screen elapsed-time]
   (let [images (count (:image-list screen))
         sounds (count (:audio-list screen))]
@@ -107,7 +107,7 @@
   (-> gscreen/BASE-SCREEN
       (into {
              :id "LoadingScreen"
-             :update (fn [screen _ elapsed-time] (update screen elapsed-time))
+             :update (fn [screen _ elapsed-time] (screen-update screen elapsed-time))
              :render (fn [screen _] (draw screen))
              :handle-input maybe-handle-input
              :next-frame nil
