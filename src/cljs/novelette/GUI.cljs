@@ -91,18 +91,23 @@
                        found (some #(when (= (:id (first %)) parent)
                                       (second %)) elements)]
                    (cond
-                     (seq elements) [walk-list false]
-                     (seq found) [(conj walk-list found) true]
+                     (not (seq elements)) [walk-list false]
+                     (not (nil? found)) [(conj walk-list found) true]
                      :else
-                      (let [recursive-values (map search elements)
-                            result (filter second recursive-values)]
-                        (if (seq result)
-                          (first result)
-                          [walk-list false])))))
-        search-result (search GUI [])
-        tree-result (first search-result)
-        sequence-of-steps (into [:GUI :children]
-                                (interleave tree-result (repeat :children)))]
-    (when-not (first search-result)
-      (throw (js/Error. (str parent " id not found in GUI element list.") )))
-    (update-in screen sequence-of-steps conj element)))
+                     (let [recursive-values (map search elements)
+                           result (filter second recursive-values)]
+                       (if (seq result)
+                         (first result)
+                         [walk-list false])))))
+        at-root (= (:id GUI) parent)] ; if parent ID is the root of the tree
+    (if at-root
+      (update-in screen [:GUI :children] conj element)
+      (let [search-result (search GUI [])
+            tree-result (first search-result)
+            sequence-of-steps (into [:GUI :children]
+                                    (interleave tree-result 
+                                                (repeat :children)))]
+        (when-not (second search-result)
+          (throw (js/Error. (str parent 
+                                 " id not found in GUI element list.") )))
+        (update-in screen sequence-of-steps conj element)))))

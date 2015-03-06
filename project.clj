@@ -18,7 +18,7 @@
      {:optimizations :whitespace
       :output-to  "runtime/js/novelette.js"
       :pretty-print true}}
-    {:source-paths ["tests"]
+    {:source-paths ["src/cljs" "tests"]
      :compiler {:output-to "compiled-tests/tests.js"
                 :optimizations :whitespace
                 :pretty-print true}}]})
