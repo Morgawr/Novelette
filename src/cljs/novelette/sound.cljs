@@ -54,8 +54,3 @@
          (do
            (stop-bgm)
            (play-bgm sym)))))
-
-(defn screen-start-bgm
-  [screen]
-  (play-bgm (:bgm screen))
-  screen)

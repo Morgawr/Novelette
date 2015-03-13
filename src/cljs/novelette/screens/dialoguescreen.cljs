@@ -94,7 +94,6 @@
              :background :dialoggui
              :context ctx
              :canvas canvas
-             :images []
              :deinit (fn [s] nil)
              :event-after event-after
              :messages messages ; list of messages to print

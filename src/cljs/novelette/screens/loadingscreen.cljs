@@ -113,7 +113,6 @@
              :next-frame nil
              :context ctx
              :canvas canvas
-             :images []
              :deinit (fn [s] nil)
              :advance false
              :complete false

@@ -1,7 +1,8 @@
 (defproject novelette "0.1.0-indev"
   :description "ClojureScript engine for visual novels."
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2913"]]
+                 [org.clojure/clojurescript "0.0-2913"]
+                 [prismatic/schema "0.4.0"]]
   :plugins [[lein-cljsbuild "1.0.5"]
             [com.cemerick/clojurescript.test  "0.3.3"]]
   :hooks [leiningen.cljsbuild]

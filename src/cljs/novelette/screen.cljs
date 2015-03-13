@@ -1,27 +1,29 @@
 (ns novelette.screen
+  (:require-macros [schema.core :as s])
   (:require [goog.dom :as dom]
             [novelette.input]
-            [novelette.render]))
+            [novelette.render]
+            [schema.core :as s]))
+
+(def function (s/pred fn? 'fn?))
 
 ; This is the screen, a screen is the base data structure that contains
 ; all the data for updating, rendering and handling a single state instance
 ; in the game. Multiple screens all packed together make the full state of the
 ; game.
-(defrecord Screen [id ; Unique identifier of the screen
-                   handle-input ; Function to handle input
-                   update ; Function to update state
-                   render ; Function to render on screen
-                   deinit ; Function to destroy screen
-                   images ; list of images to be drawn on screen
-                   canvas ; canvas of the game
-                   context ; context of the canvas
-                   next-frame ; What to do on the next game-loop
-                   bgm ; background music
-                   ])
+(s/defrecord Screen [id :- s/Keyword ; Unique identifier of the screen
+                     handle-input :- function ; Function to handle input
+                     update :- function ; Function to update state
+                     render :- function ; Function to render on screen
+                     deinit :- function ; Function to destroy screen
+                     canvas :- js/Element ; canvas of the game
+                     context :- js/Element ; context of the canvas
+                     next-frame :- function ; What to do on the next game-loop
+                     ])
 
 ; TODO - purge a lot of old data and cruft
 
-(def BASE-SCREEN (Screen. "" nil nil nil nil [] nil nil nil nil))
+(def BASE-SCREEN (Screen. "" nil nil nil nil nil nil nil))
 
 (defrecord State [screen-list curr-time context canvas])
 
