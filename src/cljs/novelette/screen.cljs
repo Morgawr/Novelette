@@ -11,21 +11,26 @@
 ; all the data for updating, rendering and handling a single state instance
 ; in the game. Multiple screens all packed together make the full state of the
 ; game.
-(s/defrecord Screen [id :- s/Keyword ; Unique identifier of the screen
-                     handle-input :- function ; Function to handle input
-                     update :- function ; Function to update state
-                     render :- function ; Function to render on screen
-                     deinit :- function ; Function to destroy screen
-                     canvas :- js/Element ; canvas of the game
-                     context :- js/Element ; context of the canvas
-                     next-frame :- function ; What to do on the next game-loop
-                     ])
+(s/defrecord Screen [id :- ( s/maybe (s/either s/Str s/Keyword)) ; Unique identifier of the screen
+                     handle-input :- (s/maybe function) ; Function to handle input
+                     update :- (s/maybe function) ; Function to update state
+                     render :- (s/maybe function) ; Function to render on screen
+                     deinit :- (s/maybe function) ; Function to destroy screen
+                     canvas :- js/HTMLCanvasElement ; canvas of the game
+                     context :- js/CanvasRenderingContext2D ; context of the canvas
+                     next-frame :- (s/maybe function) ; What to do on the next game-loop
+                     ]
+  {s/Any s/Any})
 
 ; TODO - purge a lot of old data and cruft
 
 (def BASE-SCREEN (Screen. "" nil nil nil nil nil nil nil))
 
-(defrecord State [screen-list curr-time context canvas])
+(s/defrecord State [screen-list :- [Screen]
+                    curr-time :- s/Num
+                    context :- js/CanvasRenderingContext2D ; TODO - maybe invert order of this and canvas for consistency
+                    canvas :- js/HTMLCanvasElement]
+  {s/Any s/Any})
 
 (defn get-animation-method []
   (let [window (dom/getWindow)
@@ -46,8 +51,10 @@
           (recur remaining)))
      options)))
 
-(defn screen-loop
-  [screen on-top elapsed-time]
+(s/defn screen-loop
+  [screen :- Screen
+   on-top :- s/Bool
+   elapsed-time :- s/Num]
   (let [update (:update screen)
         render (:render screen)
         input (:handle-input screen)]
@@ -56,8 +63,9 @@
         (update on-top elapsed-time)
         (render on-top))))
 
-(defn iterate-screens
-  [screen-list elapsed-time]
+(s/defn iterate-screens
+  [screen-list :- [Screen]
+   elapsed-time :- s/Num]
   (let [length (count screen-list)]
     (doall
      (map-indexed (fn [n s]
@@ -65,40 +73,43 @@
                                  elapsed-time))
                   screen-list))))
 
-(defn remove-next-step
-  [screen-list]
+(s/defn remove-next-step
+  [screen-list :- [Screen]]
   (if (empty? screen-list)
     []
     (doall
      (map #(assoc % :next-frame nil) screen-list))))
 
-(defn push-screen
-  [screen screen-list]
+(s/defn push-screen
+  [screen :- Screen
+   screen-list :- [Screen]]
   (-> screen-list
       (remove-next-step)
       (#(conj (vec %) screen))))
 
-(defn pop-screen
-  [screen-list]
+(s/defn pop-screen
+  [screen-list :- [Screen]]
   (let [oldscreen (last screen-list)]
     ((:deinit oldscreen) oldscreen))
   (pop (vec screen-list)))
 
-(defn replace-screen
-  [screen screen-list]
+(s/defn replace-screen
+  [screen :- Screen
+   screen-list :- [Screen]]
   (->> screen-list
        (pop-screen)
        (push-screen screen)))
 
-(defn restart-screens
-  [screen screen-list]
+(s/defn restart-screens
+  [screen :- Screen
+   screen-list :- []]
   (loop [s screen-list]
     (if (empty? s)
       [screen]
       (recur (pop-screen s)))))
 
-(defn schedule-next-frame
-  [state]
+(s/defn schedule-next-frame
+  [state :- State]
   "This function executes the scheduled init for the next screen if it is
   required."
   (let [next-frame (:next-frame (last (:screen-list state)))]
@@ -107,15 +118,18 @@
      (fn? next-frame) (next-frame state)
      :else (.log js/console "ERROR: next frame was something else?!"))))
 
-(defn update-time
-  [state curr-time]
+(s/defn update-time
+  [state :- State
+   curr-time :- s/Num]
   (assoc state :curr-time curr-time))
 
-(defn clear-screen [state]
+(s/defn clear-screen 
+  [state :- State]
   (novelette.render/fill-clear (:canvas state) (:context state) "black")
   state)
 
-(defn main-game-loop [state]
+(s/defn main-game-loop 
+  [state :- State]
   (let [screen-list (:screen-list state)
         curr-time (.getTime (js/Date.))
         elapsed-time (- curr-time (:curr-time state))]
