@@ -2,15 +2,11 @@
 ; setting up the storytelling engine with event hooks and storytelling
 ; routines.
 (ns novelette.storyteller
-  (:require [novelette.sound :as s]
-            [clojure.string]))
-
-(defrecord StoryTeller [runtime-hooks ; Map of runtime hooks to in-text macros
-                        current-token ; Current token to parse.
-                        timer ; Amount of milliseconds passed since last token transition
-                        state ; Local storyteller state for transitioning events
-                        first? ; Is this the first frame for this state? TODO - I dislike this, I need a better option.
-                        ])
+  (:require-macros [schema.core :as s])
+  (:require [novelette.sound :as snd]
+            [clojure.string]
+            [novelette.schemas :as sc]
+            [schema.core :as s]))
 
 ; storyteller just takes a stack of instructions and executes them in order.
 ; It constantly fetches tokens from the script and interprets them. When it requires a user
@@ -18,32 +14,33 @@
 ; which continues with the rendering and updating.
 
 ;(.log js/console (str "Added: " (pr-str (:current-token storyteller)))) ; TODO - debug flag
-(defn init-new
-  [screen]
+(s/defn init-new
+  [screen :- sc/Screen]
   (update-in screen [:storyteller] merge {:state {} :first? true :timer 0}))
 
-(defn mark-initialized
-  [screen]
+(s/defn mark-initialized
+  [screen :- sc/Screen]
   (assoc-in screen [:storyteller :first?] false))
 
-(defn init-dialogue-state
-  [{:keys [storyteller state] :as screen}]
+(s/defn init-dialogue-state
+  [{:keys [storyteller state] :as screen} :- sc/Screen]
   (cond-> screen
           (:first? storyteller)
           (update-in [:storyteller :state] merge {:cps (:cps state)
                                                   :end? false})))
 
-(defn advance-step
-  ([{:keys [storyteller state] :as screen} yield?]
+(s/defn advance-step
+  ([{:keys [storyteller state] :as screen} :- sc/Screen
+    yield? :- s/Bool]
    [(-> screen
         (assoc-in [:storyteller :current-token] (first (:scrollfront state))) ; TODO - add support for end-of-script
         (update-in [:state :scrollback] conj (:current-token storyteller)) ; TODO - conj entire state screen onto history
         (update-in [:state :scrollfront] rest)
         (init-new)) yield?])
-  ([screen] (advance-step screen false)))
+  ([screen :- sc/Screen] (advance-step screen false)))
 
-(defn update-dialogue
-  [{:keys [state storyteller] :as screen}]
+(s/defn update-dialogue
+  [{:keys [state storyteller] :as screen} :- sc/Screen]
   (let [{{current-token :current-token timer :timer
           {:keys [cps end? display-message]} :state} :storyteller
          {:keys [input-state]} :state} screen
@@ -63,16 +60,16 @@
         [(assoc-in screen [:storyteller :state :display-message]
                    (clojure.string/join (take char-count message))) true])))
 
-(defn init-explicit-choice
-  [{:keys [storyteller state] :as screen}]
+(s/defn init-explicit-choice
+  [{:keys [storyteller state] :as screen} :- sc/Screen]
   (cond-> screen
           (:first? storyteller)
           (update-in [:storyteller :state]
                      merge {:choice-text (get-in storyteller [:current-token :text])
                             :option-names (keys (get-in storyteller [:current-token :options]))})))
 
-(defn update-explicit-choice
-  [screen]
+(s/defn update-explicit-choice
+  [screen :- sc/Screen]
   (if (get-in screen [:state :input-state :clicked? 0])
     (let [{:keys [storyteller state]} screen]
       (let [y (get-in state [:input-state :y])
@@ -94,8 +91,8 @@
     [screen true]))
 
 ; XXX - change this into self-hosted parsing with :update, maybe.
-(defn parse-event
-  [screen]
+(s/defn parse-event
+  [screen :- sc/Screen]
   (let [{{step :current-token} :storyteller} screen]
     (cond
      (= :function (:type step))
@@ -128,8 +125,9 @@
          (.log js/console (pr-str (dissoc screen :state :storyteller)))
          (throw (js/Error. (str "Error: unknown type -> " (pr-str (:type step)))))))))))
 
-(defn screen-update
-  [{:keys [storyteller] :as screen} elapsed-time]
+(s/defn screen-update
+  [{:keys [storyteller] :as screen} :- sc/Screen
+   elapsed-time :- s/Num]
   (-> screen
       (update-in [:storyteller :timer] + elapsed-time)
       ((fn [screen yield?]
@@ -140,114 +138,133 @@
 
 ; RUNTIME HOOKS
 
-(defn add-sprite
-  [screen id]
+(s/defn add-sprite
+  [screen :- sc/Screen
+   id :- s/Keyword]
   (-> screen
       (update-in [:state :spriteset] conj id)
       (advance-step)))
 
-(defn remove-sprite
-  [screen id]
+(s/defn remove-sprite
+  [screen :- sc/Screen
+   id :- s/Keyword]
   (-> screen
       (update-in [:state :spriteset] disj id)
       (advance-step)))
 
-(defn clear-sprites
-  [screen id]
+(s/defn clear-sprites
+  [screen :- sc/Screen
+   id :- s/Keyword]
   (-> screen
       (assoc-in [:state :spriteset] #{})
       (advance-step)))
 
-(defn teleport-sprite
-  [screen id position]
+(s/defn teleport-sprite
+  [screen :- sc/Screen
+   id :- s/Keyword
+   position] ; TODO - Decide on the type for 2D position
   (-> screen
       (assoc-in [:state :sprites id :position] position)
       (advance-step)))
 
-(defn decl-sprite
-  [screen id img pos z-index]
+(s/defn decl-sprite
+  [screen :- sc/Screen
+   id :- s/Keyword
+   img :- s/Keyword
+   pos ; TODO - Decide on the type for 2D position
+   z-index :- s/Int]
   (-> screen
       (assoc-in [:state :sprites id] {:id img
                                       :position pos
                                       :z-index z-index})
       (advance-step)))
 
-(defn pop-background
-  [screen]
+(s/defn pop-background
+  [screen :- sc/Screen]
   (-> screen
       (update-in [:state :backgrounds] rest)
       (advance-step)))
 
-(defn push-background
-  [screen id]
+(s/defn push-background
+  [screen :- sc/Screen
+   id :- s/Keyword]
   (-> screen
       (update-in [:state :backgrounds] conj id)
       (advance-step)))
 
-(defn clear-backgrounds
-  [screen]
+(s/defn clear-backgrounds
+  [screen :- sc/Screen]
   (-> screen
       (assoc-in [:state :backgrounds] '())
       (advance-step)))
 
-(defn show-ui
-  [screen]
+(s/defn show-ui
+  [screen :- sc/Screen]
   (-> screen
       (assoc-in [:state :show-ui?] true)
       (advance-step)))
 
-(defn hide-ui
-  [screen]
+(s/defn hide-ui
+  [screen :- sc/Screen]
   (-> screen
       (assoc-in [:state :show-ui?] false)
       (advance-step)))
 
-(defn set-ui
-  [screen id pos]
+(s/defn set-ui
+  [screen :- sc/Screen
+   id :- s/Keyword
+   pos] ; TODO - Decide on the type for 2D position
   (-> screen
       (update-in [:state :ui-img] merge {:id id :position pos})
       (advance-step)))
 
-(defn wait
-  [screen msec]
+(s/defn wait
+  [screen :- sc/Screen
+   msec :- s/Int]
   (cond
    (<= msec (get-in screen [:storyteller :timer]))
      (advance-step screen)
    :else
      [screen true]))
 
-(defn get-next-scene
-  [screen {:keys [body]}]
+(s/defn get-next-scene
+  [screen :- sc/Screen
+   {:keys [body]} :- {s/Any s/Any}]
   (-> screen
       (assoc-in [:state :scrollfront] body)
       (advance-step)))
 
-(defn set-cps
-  [screen amount]
+(s/defn set-cps
+  [screen :- sc/Screen
+   amount :- s/Int]
   (-> screen
       (assoc-in [:state :cps] amount)
       (advance-step)))
 
-(defn set-dialogue-bounds
-  [screen x y w h]
+(s/defn set-dialogue-bounds
+  [screen :- sc/Screen
+   x :- s/Int y :- s/Int
+   w :- s/Int h :- s/Int]
   (-> screen
       (assoc-in [:state :dialogue-bounds] [x y w h])
       (advance-step)))
 
-(defn set-nametag-position
-  [screen pos]
+(s/defn set-nametag-position
+  [screen :- sc/Screen
+   pos] ; TODO - Decide on the type for 2D position
   (-> screen
       (assoc-in [:state :nametag-position] pos)
       (advance-step)))
 
-(defn play-bgm
-  [screen id]
-  (s/play-bgm id)
+(s/defn play-bgm
+  [screen :- sc/Screen
+   id :- s/Keyword]
+  (snd/play-bgm id)
   (advance-step screen))
 
-(defn stop-bgm
-  [screen]
-  (s/stop-bgm)
+(s/defn stop-bgm
+  [screen :- sc/Screen]
+  (snd/stop-bgm)
   (advance-step screen))
 
 (def RT-HOOKS (atom {

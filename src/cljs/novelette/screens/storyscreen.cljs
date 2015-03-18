@@ -1,11 +1,14 @@
 (ns novelette.screens.storyscreen
+  (:require-macros [schema.core :as s])
   (:require [novelette.render :as r]
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
-            [novelette.storyteller :as s]
+            [novelette.storyteller :as st]
             [novelette.GUI :as g]
+            [novelette.schemas :as sc]
             [novelette.utils :as utils]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [schema.core :as s]))
 
 ; TODO - Move on-top and elapsed-time into the screen structure
 
@@ -62,7 +65,7 @@
   [screen on-top elapsed-time]
   (cond-> screen
           on-top
-          (-> (s/screen-update elapsed-time)
+          (-> (st/screen-update elapsed-time)
               (update-gui elapsed-time))))
 
 (defn render-dialogue
@@ -158,6 +161,6 @@
     :canvas canvas
     :deinit (fn [s] nil)
     :state gamestate
-    :storyteller (s/StoryTeller. @s/RT-HOOKS {:type :dummy} 0 {} false)
+    :storyteller (sc/StoryTeller. @st/RT-HOOKS {:type :dummy} 0 {} false)
     :GUI (g/create-canvas-element canvas ctx)
     }))

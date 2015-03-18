@@ -1,36 +1,12 @@
 (ns novelette.screen
   (:require-macros [schema.core :as s])
   (:require [goog.dom :as dom]
+            [novelette.schemas :as sc]
             [novelette.input]
             [novelette.render]
             [schema.core :as s]))
 
-(def function (s/pred fn? 'fn?))
-
-; This is the screen, a screen is the base data structure that contains
-; all the data for updating, rendering and handling a single state instance
-; in the game. Multiple screens all packed together make the full state of the
-; game.
-(s/defrecord Screen [id :- ( s/maybe (s/either s/Str s/Keyword)) ; Unique identifier of the screen
-                     handle-input :- (s/maybe function) ; Function to handle input
-                     update :- (s/maybe function) ; Function to update state
-                     render :- (s/maybe function) ; Function to render on screen
-                     deinit :- (s/maybe function) ; Function to destroy screen
-                     canvas :- js/HTMLCanvasElement ; canvas of the game
-                     context :- js/CanvasRenderingContext2D ; context of the canvas
-                     next-frame :- (s/maybe function) ; What to do on the next game-loop
-                     ]
-  {s/Any s/Any})
-
-; TODO - purge a lot of old data and cruft
-
-(def BASE-SCREEN (Screen. "" nil nil nil nil nil nil nil))
-
-(s/defrecord State [screen-list :- [Screen]
-                    curr-time :- s/Num
-                    context :- js/CanvasRenderingContext2D ; TODO - maybe invert order of this and canvas for consistency
-                    canvas :- js/HTMLCanvasElement]
-  {s/Any s/Any})
+(def BASE-SCREEN (sc/Screen. "" nil nil nil nil nil nil nil))
 
 (defn get-animation-method []
   (let [window (dom/getWindow)
@@ -52,7 +28,7 @@
      options)))
 
 (s/defn screen-loop
-  [screen :- Screen
+  [screen :- sc/Screen
    on-top :- s/Bool
    elapsed-time :- s/Num]
   (let [update (:update screen)
@@ -64,7 +40,7 @@
         (render on-top))))
 
 (s/defn iterate-screens
-  [screen-list :- [Screen]
+  [screen-list :- [sc/Screen]
    elapsed-time :- s/Num]
   (let [length (count screen-list)]
     (doall
@@ -74,34 +50,34 @@
                   screen-list))))
 
 (s/defn remove-next-step
-  [screen-list :- [Screen]]
+  [screen-list :- [sc/Screen]]
   (if (empty? screen-list)
     []
     (doall
      (map #(assoc % :next-frame nil) screen-list))))
 
 (s/defn push-screen
-  [screen :- Screen
-   screen-list :- [Screen]]
+  [screen :- sc/Screen
+   screen-list :- [sc/Screen]]
   (-> screen-list
       (remove-next-step)
       (#(conj (vec %) screen))))
 
 (s/defn pop-screen
-  [screen-list :- [Screen]]
+  [screen-list :- [sc/Screen]]
   (let [oldscreen (last screen-list)]
     ((:deinit oldscreen) oldscreen))
   (pop (vec screen-list)))
 
 (s/defn replace-screen
-  [screen :- Screen
-   screen-list :- [Screen]]
+  [screen :- sc/Screen
+   screen-list :- [sc/Screen]]
   (->> screen-list
        (pop-screen)
        (push-screen screen)))
 
 (s/defn restart-screens
-  [screen :- Screen
+  [screen :- sc/Screen
    screen-list :- []]
   (loop [s screen-list]
     (if (empty? s)
@@ -109,7 +85,7 @@
       (recur (pop-screen s)))))
 
 (s/defn schedule-next-frame
-  [state :- State]
+  [state :- sc/State]
   "This function executes the scheduled init for the next screen if it is
   required."
   (let [next-frame (:next-frame (last (:screen-list state)))]
@@ -119,17 +95,17 @@
      :else (.log js/console "ERROR: next frame was something else?!"))))
 
 (s/defn update-time
-  [state :- State
+  [state :- sc/State
    curr-time :- s/Num]
   (assoc state :curr-time curr-time))
 
 (s/defn clear-screen 
-  [state :- State]
+  [state :- sc/State]
   (novelette.render/fill-clear (:canvas state) (:context state) "black")
   state)
 
 (s/defn main-game-loop 
-  [state :- State]
+  [state :- sc/State]
   (let [screen-list (:screen-list state)
         curr-time (.getTime (js/Date.))
         elapsed-time (- curr-time (:curr-time state))]

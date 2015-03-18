@@ -1,9 +1,12 @@
 (ns novelette.render
+  (:require-macros [schema.core :as s])
   (:require [goog.dom :as dom]
-            [clojure.string]))
+            [clojure.string]
+            [novelette.schemas :as sc]
+            [schema.core :as s]))
 
-(defn clear-context
-  [screen]
+(s/defn clear-context
+  [screen :- sc/Screen]
   (let [ctx (:context screen)
         canvas (:canvas screen)
         width (.-width canvas)
@@ -17,38 +20,49 @@
 
 (declare load-image)
 
-(defn load-error
-  [uri sym]
+(s/defn load-error
+  [uri :- s/Str
+   sym :- s/Keyword]
   (let [window (dom/getWindow)]
     (.setTimeout window #(load-image uri sym) 200)))
 
-(defn load-image
-  [uri sym]
+(s/defn load-image
+  [uri :- s/Str
+   sym :- s/Keyword]
   (let [image (js/Image. )]
     (set! (.-onload image) #(swap! IMAGE-MAP assoc sym image))
     (set! (.-onerror image) #(load-error uri sym))
     (set! (.-src image) uri)))
 
-(defn draw-image
-  [ctx pos name]
+(s/defn draw-image
+  [ctx :- js/CanvasRenderingContext2D
+   pos ; TODO - Fix position data validation
+   name :- s/Keyword]
   (let [image (name @IMAGE-MAP)]
     (.drawImage ctx image
                 (first pos)
                 (second pos))))
 
-(defn draw-sprite
-  [ctx {:keys [id position]}]
+(s/defn draw-sprite
+  [ctx :- js/CanvasRenderingContext2D
+   {:keys [id position]}] ; TODO - Add data validation here
   (draw-image ctx position id))
 
-(defn fill-clear
-  [canvas ctx color]
+(s/defn fill-clear
+  [canvas :- js/HTMLCanvasElement
+   ctx :- js/CanvasRenderingContext2D
+   color :- s/Str]
   (set! (.-fillStyle ctx) color)
   (.fillRect ctx 0 0
              (.-width canvas)
              (.-height canvas)))
 
-(defn draw-text
-  [ctx pos text attr color]
+(s/defn draw-text
+  [ctx :- js/CanvasRenderingContext2D
+   pos  ; TODO - Fix position data validation
+   text :- s/Str
+   attr ; TODO - Figure out the data type of this
+   color :- s/Str]
   (set! (.-textBaseline ctx) "top")
   (set! (.-font ctx) (str attr " " FONT))
   (set! (.-fillStyle ctx) color)
@@ -56,26 +70,38 @@
              (first pos)
              (second pos)))
 
-(defn measure-text-length
-  [ctx text]
+(s/defn measure-text-length
+  [ctx :- js/CanvasRenderingContext2D
+   text :- s/Str]
   (.-width (.measureText ctx text)))
 
-(defn draw-text-with-cursor
-  [ctx pos text attr color cursor-id cursor-y-offset]
+(s/defn draw-text-with-cursor
+  [ctx :- js/CanvasRenderingContext2D
+   pos  ; TODO - Fix position data validation
+   text :- s/Str
+   attr ; TODO - Figure out the data type of this
+   color :- s/Str
+   cursor-id :- s/Keyword
+   cursor-y-offset :- s/Int]
   (draw-text ctx pos text attr color)
   (let [width (measure-text-length ctx text)
         [x y] pos]
     (draw-image ctx [(+ x width 2) (+ y 14 cursor-y-offset)] cursor-id)))
 
-(defn draw-text-centered
-  [ctx pos text attr color]
+(s/defn draw-text-centered
+  [ctx :- js/CanvasRenderingContext2D
+   pos  ; TODO - Fix position data validation
+   text :- s/Str
+   attr ; TODO - Figure out the data type of this
+   color :- s/Str]
   (set! (.-font ctx) (str attr " " FONT))
   (let [width (measure-text-length ctx text)
         newx (- (first pos) (/ width 2))]
     (draw-text ctx [newx (second pos)] text attr color)))
 
-(defn split-index
-  [msg length]
+(s/defn split-index
+  [msg :- s/Str
+   length :- s/Int]
   (loop [idx 0 prevs 0]
     (cond
      (< (count msg) length)
@@ -87,8 +113,14 @@
      :else
        (recur (inc idx) prevs))))
 
-(defn draw-multiline-center-text
-  [ctx pos msg attr color maxlength spacing]
+(s/defn draw-multiline-center-text
+  [ctx :- js/CanvasRenderingContext2D
+   pos  ; TODO - Fix position data validation
+   msg :- s/Str
+   attr ; TODO - Figure out the data type of this
+   color :- s/Str
+   maxlength :- s/Int
+   spacing :- s/Int]
   (loop [msgs msg y (second pos)]
     (let [res (split-index msgs maxlength)
           first-msg (clojure.string/join (first res))
@@ -99,9 +131,8 @@
           (draw-text-centered ctx [(first pos) y] first-msg attr color)
           (recur rest-msg (+ spacing y)))))))
 
-
-(defn get-center
-  [canvas]
+(s/defn get-center
+  [canvas :- js/CanvasRenderingContext2D]
   (let [width (.-width canvas)
         height (.-height canvas)]
     [(int (/ width 2)) (int (/ height 2))]))

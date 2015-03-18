@@ -1,6 +1,8 @@
 (ns novelette.input
+  (:require-macros [schema.core :as s])
   (:require [goog.events.EventType :as event-type]
-            [goog.events :as events]))
+            [goog.events :as events]
+            [schema.core :as s]))
 
 (def INPUT-STATE (atom {:x 0
                         :y 0
@@ -48,8 +50,8 @@
   []
   (swap! INPUT-STATE assoc :clicked? [false false]))
 
-(defn init
-  [canvas]
+(s/defn init
+  [canvas :- js/HTMLCanvasElement]
   (reset! BOUNDING-BOX (.getBoundingClientRect canvas))
   (.addEventListener canvas "contextmenu" mouse-rclick-listener)
   (events/listen canvas event-type/MOUSEMOVE mouse-move-listener)

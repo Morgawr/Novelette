@@ -1,5 +1,7 @@
 (ns novelette.sound
-  (:require [goog.dom :as dom]))
+  (:require-macros [schema.core :as s])
+  (:require [goog.dom :as dom]
+            [schema.core :as s]))
 
 (def SOUND-MAP (atom {}))
 
@@ -7,25 +9,28 @@
 
 (declare load-sound)
 
-(defn load-error
-  [uri sym]
+(s/defn load-error
+  [uri :- s/Str
+   sym :- s/Keyword]
   (let [window (dom/getWindow)]
     (.setTimeout window #(load-sound uri sym) 200)))
 
-(defn load-sound
-  [uri sym]
+(s/defn load-sound
+  [uri :- s/Str
+   sym :- s/Keyword]
   (let [sound (js/Audio.)]
     (set! (.-loop sound) true)
     (.addEventListener sound "loadeddata" #(swap! SOUND-MAP assoc sym sound))
     (set! (.-onerror sound) #(load-error uri sym))
     (set! (.-src sound) uri)))
 
-(defn stop-audio
-  [sound]
+(s/defn stop-audio
+  [sound :- js/Audio]
   (.pause sound))
 
-(defn play-audio
-  [sound loop?]
+(s/defn play-audio
+  [sound :- js/Audio
+   loop? :- s/Bool]
   (set! (.-currentTime sound) 0)
   (set! (.-loop sound) loop?)
   (.play sound))
@@ -38,8 +43,8 @@
       (stop-audio bgm))
     (reset! BGM {})))
 
-(defn play-bgm
-  [sym]
+(s/defn play-bgm
+  [sym :- s/Keyword]
   (let [curr-sym (first (keys @BGM))
         sound1 (@BGM curr-sym)
         sound2 (sym @SOUND-MAP)]
