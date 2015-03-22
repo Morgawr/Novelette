@@ -7,6 +7,17 @@
 
 (s/defschema function (s/pred fn? 'fn?))
 
+; A position is either a pair of coordinates x/y or a tuple of four values x/y/w/h
+; packed into a vector.
+(s/defschema pos (s/either [(s/one s/Int :x) (s/one s/Int :y)]
+                           [(s/one s/Int :x) (s/one s/Int :y)
+                            (s/one s/Int :width) (s/one s/Int :height)]))
+
+; A GUIEvent is one of the following enums.
+(s/defschema GUIEvent (s/enum :clicked :on-focus
+                              :off-focus :on-hover
+                              :off-over))
+
 ; This is the screen, a screen is the base data structure that contains
 ; all the data for updating, rendering and handling a single state instance
 ; in the game. Multiple screens all packed together make the full state of the
@@ -30,11 +41,17 @@
                     canvas :- js/HTMLCanvasElement]
   {s/Any s/Any})
 
-; A position is either a pair of coordinates x/y or a tuple of four values x/y/w/h
-; packed into a vector.
-(s/defschema pos (s/either [(s/one s/Int :x) (s/one s/Int :y)]
-                           [(s/one s/Int :x) (s/one s/Int :y) 
-                            (s/one s/Int :width) (s/one s/Int :height)]))
+; A GUIElement is the basic datatype used to handle GUI operations.
+(s/defrecord GUIElement [type :- s/Keyword; The element type.
+                         id :- (s/either s/Str s/Keyword) ; Name/id of the GUI element
+                         position :- pos ; Coordinates of the element [x y w h]
+                         content :- {s/Any s/Any} ; Local state of the element (i.e.: checkbox checked? radio selected? etc)
+                         children :- [s/Any] ; Vector of children GUIElements.
+                         events :- {GUIEvent function} ; Map of events.
+                         focus? :- s/Bool ; Whether or not the element has focus status.
+                         z-index :- s/Int ; Depth of the Element in relation to its siblings. lower = front
+                         render :- function ; Render function called on the element.
+                         ])
 
 ; A sprite is different from an image, an image is a texture loaded into the
 ; engine's renderer with an id assigned as a reference. A sprite is an instance
@@ -65,6 +82,7 @@
                          cursor-delta :- s/Num ; Delta to make the cursor float, just calculate % 4
                          dialogue-bounds :- [s/Int] ; x,y, width and height of the boundaries of text to be displayed
                          nametag-position :- [s/Int] ; x,y coordinates of the nametag in the UI
+                         GUI :- (s/maybe GUIElement) ; Base GUI element for the GUI system (the canvas)
                          ; TODO - add a "seen" map with all the dialogue options already seen
                          ;        to facilitate skipping of text.
                          ]
@@ -75,22 +93,7 @@
                           timer :- s/Num ; Amount of milliseconds passed since last token transition
                           state :- {s/Any s/Any} ; Local storyteller state for transitioning events
                           first? :- s/Bool ; Is this the first frame for this state? TODO - I dislike this, I need a better option.
-                          ] 
+                          ]
   {s/Any s/Any})
 
-; A GUIElement is the basic datatype used to handle GUI operations.
-(s/defrecord GUIElement [type :- s/Keyword; The element type. (More about it later)
-                         id :- (s/either s/Str s/Keyword) ; Name/id of the GUI element
-                         position :- pos ; Coordinates of the element [x y w h]
-                         content :- {s/Any s/Any} ; Local state of the element (i.e.: checkbox checked? radio selected? etc)
-                         children :- [s/Any] ; Vector of children GUIElements.
-                         events :- {s/Keyword function} ; Map of events. (More about it later)
-                         focus? :- s/Bool ; Whether or not the element has focus status.
-                         z-index :- s/Int ; Depth of the Element in relation to its siblings. lower = front
-                         render :- function ; Render function called on the element.
-                         ])
 
-; A GUIEvent is one of the following enums.
-(s/defschema GUIEvent (s/enum :clicked :on-focus
-                              :off-focus :on-hover
-                              :off-over))

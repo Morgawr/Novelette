@@ -1,6 +1,7 @@
 (ns novelette.screens.storyscreen
   (:require-macros [schema.core :as s])
   (:require [novelette.render :as r]
+            [novelette.GUI :as GUI]
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
             [novelette.storyteller :as st]
@@ -10,9 +11,10 @@
             [clojure.string :as string]
             [schema.core :as s]))
 
+; TODO - Maybe remove the base state? It's only used in the init.
 (def BASE-STATE (sc/StoryState. '() '() #{} {} '() {} 0 true false
                                 (sc/Sprite. :dialogue-ui [0 0] 0) {} :cursor 0
-                                [0 0 0 0] [0 0]))
+                                [0 0 0 0] [0 0] nil))
 
 (s/defn update-cursor ; TODO - move this into the GUI
   [{:keys [state] :as screen} :- sc/Screen
@@ -99,7 +101,6 @@
 (s/defn render ; TODO - move this to GUI
   [{:keys [state context] :as screen} :- sc/Screen
    on-top :- s/Bool]
-  (.save context)
   (let [bgs (reverse (:backgrounds state))
         sps (if (seq (:spriteset state)) (utils/sort-z-index ((apply juxt (:spriteset state)) (:sprites state))) [])]
     (doseq [s bgs]
@@ -120,7 +121,8 @@
    on-top :- s/Bool
    input :- {s/Any s/Any}]
   (cond-> screen
-          on-top (assoc-in [:state :input-state] input)))
+    on-top (#(GUI/handle-input
+               (assoc-in % [:state :input-state] input)))))
 
 (s/defn init
   [ctx :- js/CanvasRenderingContext2D

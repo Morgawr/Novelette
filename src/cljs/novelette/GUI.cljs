@@ -27,6 +27,7 @@
   function for each element until one of them returns false and stops
   propagating upwards."
   [screen :- sc/Screen]
+  ; TODO - Walk through the input state and pass it to the GUI element tree.
   screen)
 
 (s/defn render
@@ -92,9 +93,9 @@
       (let [search-result (search GUI [])
             tree-result (first search-result)
             sequence-of-steps (into [:GUI :children]
-                                    (interleave tree-result 
+                                    (interleave tree-result
                                                 (repeat :children)))]
         (when-not (second search-result)
-          (throw (js/Error. (str parent 
+          (throw (js/Error. (str parent
                                  " id not found in GUI element list.") )))
         (update-in screen sequence-of-steps conj element)))))
