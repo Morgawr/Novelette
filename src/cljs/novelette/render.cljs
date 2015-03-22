@@ -36,7 +36,7 @@
 
 (s/defn draw-image
   [ctx :- js/CanvasRenderingContext2D
-   pos ; TODO - Fix position data validation
+   pos :- sc/pos
    name :- s/Keyword]
   (let [image (name @IMAGE-MAP)]
     (.drawImage ctx image
@@ -45,7 +45,7 @@
 
 (s/defn draw-sprite
   [ctx :- js/CanvasRenderingContext2D
-   {:keys [id position]}] ; TODO - Add data validation here
+   {:keys [id position]} :- sc/Sprite] 
   (draw-image ctx position id))
 
 (s/defn fill-clear
@@ -59,7 +59,7 @@
 
 (s/defn draw-text
   [ctx :- js/CanvasRenderingContext2D
-   pos  ; TODO - Fix position data validation
+   pos :- sc/pos
    text :- s/Str
    attr ; TODO - Figure out the data type of this
    color :- s/Str]
@@ -77,7 +77,7 @@
 
 (s/defn draw-text-with-cursor
   [ctx :- js/CanvasRenderingContext2D
-   pos  ; TODO - Fix position data validation
+   pos :- sc/pos
    text :- s/Str
    attr ; TODO - Figure out the data type of this
    color :- s/Str
@@ -90,13 +90,13 @@
 
 (s/defn draw-text-centered
   [ctx :- js/CanvasRenderingContext2D
-   pos  ; TODO - Fix position data validation
+   pos :- sc/pos
    text :- s/Str
    attr ; TODO - Figure out the data type of this
    color :- s/Str]
   (set! (.-font ctx) (str attr " " FONT))
   (let [width (measure-text-length ctx text)
-        newx (- (first pos) (/ width 2))]
+        newx (int (- (first pos) (/ width 2)))]
     (draw-text ctx [newx (second pos)] text attr color)))
 
 (s/defn split-index
@@ -115,13 +115,14 @@
 
 (s/defn draw-multiline-center-text
   [ctx :- js/CanvasRenderingContext2D
-   pos  ; TODO - Fix position data validation
+   pos :- sc/pos
    msg :- s/Str
    attr ; TODO - Figure out the data type of this
    color :- s/Str
    maxlength :- s/Int
    spacing :- s/Int]
-  (loop [msgs msg y (second pos)]
+  (loop [msgs msg 
+         [_ y] pos]
     (let [res (split-index msgs maxlength)
           first-msg (clojure.string/join (first res))
           rest-msg (clojure.string/join (second res))]

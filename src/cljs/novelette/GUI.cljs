@@ -1,18 +1,9 @@
-(ns novelette.GUI)
+(ns novelette.GUI
+  (:require-macros [schema.core :as s])
+  (:require [novelette.schemas :as sc]
+            [schema.core :as s]))
 
 ; This file contains the whole codebase for the Novelette GUI engine.
-
-; A GUIElement is the basic datatype used to handle GUI operations.
-(defrecord GUIElement [type ; The element type. (More about it later)
-                       id ; Name/id of the GUI element
-                       position ; Coordinates of the element [x y w h]
-                       content ; Local state of the element (i.e.: checkbox checked? radio selected? etc)
-                       children ; Vector of children GUIElements.
-                       events ; Map of events. (More about it later)
-                       focus? ; Whether or not the element has focus status.
-                       z-index ; Depth of the Element in relation to its siblings. lower = front
-                       render ; Render function called on the element.
-                       ])
 
 ; Note on IDs: When creating a new GUI element it is possible to specify
 ; its parent ID. In case of duplicate IDs the function walks through the
@@ -30,25 +21,18 @@
 ; :canvas <-- There can only be one canvas in the whole game, it is the base GUI element
 ;             used to catch all the base events when nothing else is hit. It is the root of the tree.
 
-
-; Events can be:
-; :clicked
-; :on-focus
-; :off-focus
-; :on-hover
-; :off-hover
-
-(defn handle-input
+(s/defn handle-input
   "Handles the input on the GUI engine. It delves into the subtree branch
   of the GUI element tree in a DFS and calls the appropriate handle-input
   function for each element until one of them returns false and stops
   propagating upwards."
-  [screen]
+  [screen :- sc/Screen]
   screen)
 
-(defn render
+(s/defn render
   "Generic render function called recursively on all GUI elements on the screen."
-  [element ancestors]
+  [element ;:- sc/GUIElement
+   ancestors] ;:- [sc/GUIElement]]
   ((:render element) element ancestors)
   (doseq [x (reverse (sort-by :z-index (:children element)))]
     ; This could cause a stack-overflow but the depth of the children tree
@@ -62,16 +46,17 @@
     ; stack but it shouldn't be worse... I hope.
     (render x (conj ancestors element))))
 
-(defn render-gui
+(s/defn render-gui
   "Recursively calls into the registered elements render functions and displays
   them on the screen."
-  [{:keys [GUI]}]
+  [{:keys [GUI]}] ;:- sc/Screen]
   (render GUI '()))
 
-(defn create-canvas-element
+(s/defn create-canvas-element
   "Creates a new canvas GUI element with sane defaults."
-  [canvas ctx]
-  (let [element (GUIElement. :canvas
+  [canvas; :- js/HTMLCanvasElement
+   ctx ];:- js/CanvasRenderingContext2D]
+  (let [element (sc/GUIElement. :canvas
                              :canvas ; id
                              [0 0 (.-width canvas) (.-height canvas)]
                              {:entity canvas :context ctx}
@@ -82,10 +67,12 @@
                              identity)] ; TODO - add render function for canvas
     element))
 
-(defn add-element-to-GUI
+(s/defn add-element-to-GUI
   "Add a GUIElement to the GUI tree recursively looking for the specified
   parent."
-  [element parent {:keys [GUI] :as screen}]
+  [element; :- sc/GUIElement
+   parent; :- s/Keyword
+   {:keys [GUI] :as screen}]
   (let [search (fn search [GUI-tree walk-list]
                  (let [elements (into [] (zipmap (:children GUI-tree) (range)))
                        found (some #(when (= (:id (first %)) parent)

@@ -162,7 +162,7 @@
 (s/defn teleport-sprite
   [screen :- sc/Screen
    id :- s/Keyword
-   position] ; TODO - Decide on the type for 2D position
+   position :- sc/pos]
   (-> screen
       (assoc-in [:state :sprites id :position] position)
       (advance-step)))
@@ -171,7 +171,7 @@
   [screen :- sc/Screen
    id :- s/Keyword
    img :- s/Keyword
-   pos ; TODO - Decide on the type for 2D position
+   pos :- sc/pos
    z-index :- s/Int]
   (-> screen
       (assoc-in [:state :sprites id] {:id img
@@ -213,7 +213,7 @@
 (s/defn set-ui
   [screen :- sc/Screen
    id :- s/Keyword
-   pos] ; TODO - Decide on the type for 2D position
+   pos :- sc/pos]
   (-> screen
       (update-in [:state :ui-img] merge {:id id :position pos})
       (advance-step)))
@@ -229,7 +229,7 @@
 
 (s/defn get-next-scene
   [screen :- sc/Screen
-   {:keys [body]} :- {s/Any s/Any}]
+   {:keys [body]} :- {s/Keyword s/Any}]
   (-> screen
       (assoc-in [:state :scrollfront] body)
       (advance-step)))
@@ -251,7 +251,7 @@
 
 (s/defn set-nametag-position
   [screen :- sc/Screen
-   pos] ; TODO - Decide on the type for 2D position
+   pos :- sc/pos]
   (-> screen
       (assoc-in [:state :nametag-position] pos)
       (advance-step)))

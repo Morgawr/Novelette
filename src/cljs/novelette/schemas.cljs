@@ -5,7 +5,7 @@
 ; This file contains all the schemas used by the Novelette VN engine so it can
 ; be easily referred from any namespace without dependency problems.
 
-(def function (s/pred fn? 'fn?))
+(s/defschema function (s/pred fn? 'fn?))
 
 ; This is the screen, a screen is the base data structure that contains
 ; all the data for updating, rendering and handling a single state instance
@@ -24,18 +24,23 @@
 
 ; TODO - purge a lot of old data and cruft
 
-
 (s/defrecord State [screen-list :- [Screen]
                     curr-time :- s/Num
                     context :- js/CanvasRenderingContext2D ; TODO - maybe invert order of this and canvas for consistency
                     canvas :- js/HTMLCanvasElement]
   {s/Any s/Any})
 
+; A position is either a pair of coordinates x/y or a tuple of four values x/y/w/h
+; packed into a vector.
+(s/defschema pos (s/either [(s/one s/Int :x) (s/one s/Int :y)]
+                           [(s/one s/Int :x) (s/one s/Int :y) 
+                            (s/one s/Int :width) (s/one s/Int :height)]))
+
 ; A sprite is different from an image, an image is a texture loaded into the
 ; engine's renderer with an id assigned as a reference. A sprite is an instance
 ; of a texture paired with appropriate positioning and rendering data.
 (s/defrecord Sprite [id :- s/Keyword; image id loaded in the engine
-                     position :- s/Any ; X/Y coordinates in a vector
+                     position :- pos ; X/Y coordinates in a vector
                      z-index :- s/Int ; depth ordering for rendering, lower = front
                      ; TODO - add scale and rotation
                      ])
@@ -72,3 +77,20 @@
                           first? :- s/Bool ; Is this the first frame for this state? TODO - I dislike this, I need a better option.
                           ] 
   {s/Any s/Any})
+
+; A GUIElement is the basic datatype used to handle GUI operations.
+(s/defrecord GUIElement [type :- s/Keyword; The element type. (More about it later)
+                         id :- (s/either s/Str s/Keyword) ; Name/id of the GUI element
+                         position :- pos ; Coordinates of the element [x y w h]
+                         content :- {s/Any s/Any} ; Local state of the element (i.e.: checkbox checked? radio selected? etc)
+                         children :- [s/Any] ; Vector of children GUIElements.
+                         events :- {s/Keyword function} ; Map of events. (More about it later)
+                         focus? :- s/Bool ; Whether or not the element has focus status.
+                         z-index :- s/Int ; Depth of the Element in relation to its siblings. lower = front
+                         render :- function ; Render function called on the element.
+                         ])
+
+; A GUIEvent is one of the following enums.
+(s/defschema GUIEvent (s/enum :clicked :on-focus
+                              :off-focus :on-hover
+                              :off-over))
