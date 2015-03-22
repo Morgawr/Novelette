@@ -2,6 +2,7 @@
   (:require-macros [schema.core :as s])
   (:require [novelette.render :as r]
             [novelette.GUI :as GUI]
+            [novelette.GUI.canvas]
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
             [novelette.storyteller :as st]
@@ -103,6 +104,7 @@
    on-top :- s/Bool]
   (let [bgs (reverse (:backgrounds state))
         sps (if (seq (:spriteset state)) (utils/sort-z-index ((apply juxt (:spriteset state)) (:sprites state))) [])]
+    (GUI/render-gui screen)
     (doseq [s bgs]
       (r/draw-image context [0 0] s))
     (when on-top
@@ -139,5 +141,7 @@
     :deinit (fn [s] nil)
     :state gamestate
     :storyteller (sc/StoryTeller. @st/RT-HOOKS {:type :dummy} 0 {} false)
-    :GUI (g/create-canvas-element canvas ctx)
+    :GUI (novelette.GUI.canvas/create-canvas-element canvas ctx "black")
     }))
+; TODO - Find a way to properly pass user-provided init data to the canvas
+; and other possible GUI elements. In this case it's the 'black' color.

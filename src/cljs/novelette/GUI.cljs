@@ -50,23 +50,8 @@
 (s/defn render-gui
   "Recursively calls into the registered elements render functions and displays
   them on the screen."
-  [{:keys [GUI]} :- sc/Screen]
+  [{GUI :GUI} :- sc/Screen]
   (render GUI '()))
-
-(s/defn create-canvas-element
-  "Creates a new canvas GUI element with sane defaults."
-  [canvas :- js/HTMLCanvasElement
-   ctx :- js/CanvasRenderingContext2D]
-  (let [element (sc/GUIElement. :canvas
-                             :canvas ; id
-                             [0 0 (.-width canvas) (.-height canvas)]
-                             {:entity canvas :context ctx}
-                             [] ; no children yet
-                             {} ; no events yet
-                             true ; focus
-                             10000 ; very low priority in depth
-                             identity)] ; TODO - add render function for canvas
-    element))
 
 (s/defn add-element-to-GUI
   "Add a GUIElement to the GUI tree recursively looking for the specified

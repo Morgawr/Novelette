@@ -45,7 +45,7 @@
 (s/defrecord GUIElement [type :- s/Keyword; The element type.
                          id :- (s/either s/Str s/Keyword) ; Name/id of the GUI element
                          position :- pos ; Coordinates of the element [x y w h]
-                         content :- {s/Any s/Any} ; Local state of the element (i.e.: checkbox checked? radio selected? etc)
+                         content :- {s/Keyword s/Any} ; Local state of the element (i.e.: checkbox checked? radio selected? etc)
                          children :- [s/Any] ; Vector of children GUIElements.
                          events :- {GUIEvent function} ; Map of events.
                          focus? :- s/Bool ; Whether or not the element has focus status.
