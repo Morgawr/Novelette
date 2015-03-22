@@ -12,28 +12,6 @@
 
 ; TODO - Move on-top and elapsed-time into the screen structure
 
-; This is the storytelling state of the game. It is an object containing the whole set of
-; past, present and near-future state. It keeps track of stateful actions like scrollback,
-; sprites being rendered, bgm playing and other stuff. Ideally, it should be easy to
-; save/load transparently.
-(defrecord State [scrollback ; Complete history of events for scrollback purposes, as a stack (this should contain the previous state of the storyscreen too)
-                  scrollfront ; Stack of events yet to be interpreted.
-                  spriteset ; Set of sprite id currently displayed on screen.
-                  sprites ; Map of sprites globally defined on screen.
-                  backgrounds ; Stack of sprites currently in use as backgrounds.
-                  points ; Map of points that the player obtained during the game
-                  cps ; characters per second
-                  next-step? ; Whether or not to advance to next step for storytelling
-                  show-ui? ; Whether or not we show the game UI on screen.
-                  ui-img ; UI image to show
-                  input-state ; State of the input for the current frame.
-                  cursor ; Image of glyph used to advance text
-                  cursor-delta ; Delta to make the cursor float, just calculate % 4
-                  dialogue-bounds ; x,y, width and height of the boundaries of text to be displayed
-                  nametag-position ; x,y coordinates of the nametag in the UI
-                  ; TODO - add a "seen" map with all the dialogue options already seen
-                  ;        to facilitate skipping of text.
-                  ])
 
 ; A sprite is different from an image, an image is a texture loaded into the
 ; engine's renderer with an id assigned as a reference. A sprite is an instance
@@ -44,12 +22,13 @@
                    ; TODO - add scale and rotation
                    ])
 
-(def BASE-STATE (State. '() '() #{} {} '() {} 0 true false
-                        (Sprite. :dialogue-ui [0 0] 0) {} :cursor 0
-                        [0 0 0 0] [0 0]))
+(def BASE-STATE (sc/StoryState. '() '() #{} {} '() {} 0 true false
+                                (Sprite. :dialogue-ui [0 0] 0) {} :cursor 0
+                                [0 0 0 0] [0 0]))
 
-(defn update-cursor ; TODO - move this into the GUI
-  [{:keys [state] :as screen} elapsed-time]
+(s/defn update-cursor ; TODO - move this into the GUI
+  [{:keys [state] :as screen} :- sc/Screen
+   elapsed-time :- s/Int]
   (let [cursor-delta (:cursor-delta state)]
     (if (> (+ cursor-delta elapsed-time) 800)
       (assoc-in screen [:state :cursor-delta]
@@ -57,19 +36,22 @@
       (assoc-in screen [:state :cursor-delta]
                 (+ cursor-delta elapsed-time)))))
 
-(defn update-gui
-  [screen elapsed-time]
+(s/defn update-gui
+  [screen :- sc/Screen
+   elapsed-time :- s/Int]
   (update-cursor screen elapsed-time)) ; TODO - move this into the GUI
 
-(defn screen-update
-  [screen on-top elapsed-time]
+(s/defn screen-update
+  [screen :- sc/Screen
+   on-top :- s/Bool
+   elapsed-time :- s/Int]
   (cond-> screen
           on-top
           (-> (st/screen-update elapsed-time)
               (update-gui elapsed-time))))
 
-(defn render-dialogue
-  [{:keys [state storyteller context] :as screen}]
+(s/defn render-dialogue
+  [{:keys [state storyteller context] :as screen} :- sc/Screen]
   (let [{:keys [cursor cursor-delta
                 dialogue-bounds nametag-position]} state
         [x y w h] dialogue-bounds
@@ -111,8 +93,8 @@
       (r/draw-text context nametag-position nametag "bold 29px" (name namecolor))))
     (.restore context))
 
-(defn render-choice
-  [{:keys [state storyteller context] :as screen}]
+(s/defn render-choice
+  [{:keys [state storyteller context] :as screen} :- sc/Screen]
   (.save context)
   (set! (.-shadowColor context) "black")
   (set! (.-shadowOffsetX context) 1.5)
@@ -126,8 +108,9 @@
       (r/draw-text context [(- 620 pos-w) (+ 285 (* i 45))] s "20px" "white")))
   (.restore context))
 
-(defn render ; TODO - move this to GUI
-  [{:keys [state context] :as screen} on-top]
+(s/defn render ; TODO - move this to GUI
+  [{:keys [state context] :as screen} :- sc/Screen
+   on-top :- s/Bool]
   (.save context)
   (let [bgs (reverse (:backgrounds state))
         sps (if (seq (:spriteset state)) (utils/sort-z-index ((apply juxt (:spriteset state)) (:sprites state))) [])]
@@ -144,13 +127,17 @@
         (render-choice screen))))
   screen) ; TODO This might just return nothing? render in any case shouldn't be stateful
 
-(defn handle-input ; TODO - send events to GUI hooks
-  [screen on-top input]
+(s/defn handle-input ; TODO - send events to GUI hooks
+  [screen :- sc/Screen
+   on-top :- s/Bool
+   input :- {s/Any s/Any}]
   (cond-> screen
           on-top (assoc-in [:state :input-state] input)))
 
-(defn init
-  [ctx canvas gamestate]
+(s/defn init
+  [ctx :- js/CanvasRenderingContext2D
+   canvas :- js/HTMLCanvasElement
+   gamestate :- sc/StoryState]
   (into gscreen/BASE-SCREEN
    {
     :id "StoryScreen"
