@@ -31,20 +31,30 @@
                     canvas :- js/HTMLCanvasElement]
   {s/Any s/Any})
 
+; A sprite is different from an image, an image is a texture loaded into the
+; engine's renderer with an id assigned as a reference. A sprite is an instance
+; of a texture paired with appropriate positioning and rendering data.
+(s/defrecord Sprite [id :- s/Keyword; image id loaded in the engine
+                     position :- s/Any ; X/Y coordinates in a vector
+                     z-index :- s/Int ; depth ordering for rendering, lower = front
+                     ; TODO - add scale and rotation
+                     ])
+
+; TODO - Move on-top and elapsed-time into the screen structure
 ; This is the storytelling state of the game. It is an object containing the whole set of
 ; past, present and near-future state. It keeps track of stateful actions like scrollback,
 ; sprites being rendered, bgm playing and other stuff. Ideally, it should be easy to
 ; save/load transparently.
 (s/defrecord StoryState [scrollback :- [s/Any] ; Complete history of events for scrollback purposes, as a stack (this should contain the previous state of the storyscreen too)
                          scrollfront :- [{s/Any s/Any}] ; Stack of events yet to be interpreted.
-                         spriteset :- #{s/Any} ; Set of sprite id currently displayed on screen.
-                         sprites :- {s/Any s/Any} ; Map of sprites globally defined on screen.
-                         backgrounds :- [s/Any] ; Stack of sprites currently in use as backgrounds.
+                         spriteset :- #{s/Keyword} ; Set of sprite id currently displayed on screen.
+                         sprites :- {s/Keyword Sprite} ; Map of sprites globally defined on screen.
+                         backgrounds :- [Sprite] ; Stack of sprites currently in use as backgrounds.
                          points :- {s/Keyword s/Int} ; Map of points that the player obtained during the game
                          cps :- s/Int ; characters per second
                          next-step? :- s/Bool ; Whether or not to advance to next step for storytelling
                          show-ui? :- s/Bool ; Whether or not we show the game UI on screen.
-                         ui-img :- s/Any ; UI image to show
+                         ui-img :- Sprite; UI image to show
                          input-state :- {s/Keyword s/Any} ; State of the input for the current frame.
                          cursor :- s/Keyword ; Image of glyph used to advance text
                          cursor-delta :- s/Num ; Delta to make the cursor float, just calculate % 4

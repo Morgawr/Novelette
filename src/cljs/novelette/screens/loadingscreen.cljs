@@ -1,43 +1,50 @@
 (ns novelette.screens.loadingscreen
+  (:require-macros [schema.core :as s])
   (:require [novelette.render :as r]
             [novelette.screen :as gscreen]
+            [novelette.schemas :as sc]
             [novelette.sound :as gsound]
-            [novelette.screens.storyscreen]))
+            [novelette.screens.storyscreen]
+            [schema.core :as s]))
 
 ; This is the loading screen, it is the first screen that we load in the game
 ; and its task is to load all the resources (images, sounds, etc etc) of the
 ; game before we can begin playing.
-(defn can-play?
-  [type]
+(s/defn can-play?
+  [type :- s/Str]
   (not (empty? (. (js/Audio.) canPlayType type))))
 
-(defn set-audio-extension
-  [audio ext]
+(s/defn set-audio-extension
+  [audio :- {s/Keyword s/Str}
+   ext :- s/Str]
   (into {} (for [[k v] audio] [k (str v ext)])))
 
-(defn generate-audio-list
-  [audio]
+(s/defn generate-audio-list
+  [audio :- {s/Keyword s/Str}]
   (let [canplayogg (can-play? "audio/ogg; codecs=vorbis")
         canplaymp3 (can-play? "audio/mpeg")]
     (cond
      canplayogg (set-audio-extension audio ".ogg")
      canplaymp3 (set-audio-extension audio ".mp3")
-     :else (js/alert "Your browser does not seem to support the proper audio standards. The game will not work."))))
+     :else (throw (js/Error. "Your browser does not seem to support the proper audio standards. The game will not work.")))))
 
-(defn handle-input
-  [screen input]
+(s/defn handle-input
+  [screen :- sc/Screen
+   input :- {s/Any s/Any}]
   (if (and (:complete screen) ((:clicked? input) 0) (not (:advance screen)))
     (assoc screen :advance true)
     screen))
 
-(defn maybe-handle-input
-  [screen on-top input]
+(s/defn maybe-handle-input
+  [screen :- sc/Screen
+   on-top :- s/Bool
+   input :- {s/Any s/Any}]
   (if on-top
     (handle-input screen input)
     screen))
 
-(defn load-main-menu
-  [screen]
+(s/defn load-main-menu
+  [screen :- sc/Screen]
   (let [ctx (:context screen)
         canvas (:canvas screen)]
     (assoc screen
@@ -47,37 +54,41 @@
               new-list (gscreen/replace-screen (:to-load screen) screen-list)]
           (assoc state :screen-list new-list))))))
 
-(defn percentage-loaded
-  [imgcount sndcount]
+(s/defn percentage-loaded
+  [imgcount :- s/Int
+   sndcount :- s/Int]
   (let [max (+ (count @r/IMAGE-MAP)
                (count @gsound/SOUND-MAP))
         ptg (* (/ max (+ imgcount sndcount)) 100)]
     (int ptg)))
 
-(defn everything-loaded
-  [screen]
+(s/defn everything-loaded
+  [screen :- sc/Screen]
   (let [complete true
         message "Finished loading, click to continue"]
     (assoc screen :complete complete :message message
       :percentage (percentage-loaded
                    (count (:image-list screen)) (count (:audio-list screen))))))
 
-(defn has-loaded?
-  [num res-map]
+(s/defn has-loaded?
+  [num :- s/Int
+   res-map :- {s/Any s/Any}]
   (= num (count res-map)))
 
-(defn all-loaded?
-  [imgcount sndcount]
+(s/defn all-loaded?
+  [imgcount :- s/Int
+   sndcount :- s/Int]
   (and (has-loaded? imgcount @r/IMAGE-MAP)
        (has-loaded? sndcount @gsound/SOUND-MAP)))
 
-(defn load-sounds
-  [screen]
+(s/defn load-sounds
+  [screen :- sc/Screen]
   (doseq [[k v] (:audio-list screen)] (gsound/load-sound v k))
   (assoc screen :loading-status 1))
 
-(defn screen-update
-  [screen elapsed-time]
+(s/defn screen-update
+  [screen :- sc/Screen
+   elapsed-time :- s/Int]
   (let [images (count (:image-list screen))
         sounds (count (:audio-list screen))]
     (cond
@@ -93,16 +104,20 @@
      :else
        (assoc screen :percentage (percentage-loaded images sounds)))))
 
-(defn draw
-  [screen] ; TODO - set coordinates to proper resolution
+(s/defn draw
+  [screen :- sc/Screen] ; TODO - set coordinates to proper resolution
   (r/draw-text-centered (:context screen) [690 310]
                         (:message screen) "25px" "white")
   (r/draw-text-centered (:context screen) [690 360]
                         (str (:percentage screen) "%") "25px" "white")
   screen)
 
-(defn init
-  [ctx canvas images audios to-load]
+(s/defn init
+  [ctx :- js/CanvasRenderingContext2D
+   canvas :- js/HTMLCanvasElement
+   images :- {s/Any s/Any}
+   audios :- {s/Any s/Any}
+   to-load :- sc/Screen]
   (doseq [[k v] images] (r/load-image v k))
   (-> gscreen/BASE-SCREEN
       (into {

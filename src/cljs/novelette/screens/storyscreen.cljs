@@ -10,20 +10,8 @@
             [clojure.string :as string]
             [schema.core :as s]))
 
-; TODO - Move on-top and elapsed-time into the screen structure
-
-
-; A sprite is different from an image, an image is a texture loaded into the
-; engine's renderer with an id assigned as a reference. A sprite is an instance
-; of a texture paired with appropriate positioning and rendering data.
-(defrecord Sprite [id ; image id loaded in the engine
-                   position ; X/Y coordinates in a vector
-                   z-index ; depth ordering for rendering, lower = front
-                   ; TODO - add scale and rotation
-                   ])
-
 (def BASE-STATE (sc/StoryState. '() '() #{} {} '() {} 0 true false
-                                (Sprite. :dialogue-ui [0 0] 0) {} :cursor 0
+                                (sc/Sprite. :dialogue-ui [0 0] 0) {} :cursor 0
                                 [0 0 0 0] [0 0]))
 
 (s/defn update-cursor ; TODO - move this into the GUI
