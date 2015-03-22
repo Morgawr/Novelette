@@ -31,8 +31,8 @@
 
 (s/defn render
   "Generic render function called recursively on all GUI elements on the screen."
-  [element ;:- sc/GUIElement
-   ancestors] ;:- [sc/GUIElement]]
+  [element :- sc/GUIElement
+   ancestors :- [sc/GUIElement]]
   ((:render element) element ancestors)
   (doseq [x (reverse (sort-by :z-index (:children element)))]
     ; This could cause a stack-overflow but the depth of the children tree
@@ -49,13 +49,13 @@
 (s/defn render-gui
   "Recursively calls into the registered elements render functions and displays
   them on the screen."
-  [{:keys [GUI]}] ;:- sc/Screen]
+  [{:keys [GUI]} :- sc/Screen]
   (render GUI '()))
 
 (s/defn create-canvas-element
   "Creates a new canvas GUI element with sane defaults."
-  [canvas; :- js/HTMLCanvasElement
-   ctx ];:- js/CanvasRenderingContext2D]
+  [canvas :- js/HTMLCanvasElement
+   ctx :- js/CanvasRenderingContext2D]
   (let [element (sc/GUIElement. :canvas
                              :canvas ; id
                              [0 0 (.-width canvas) (.-height canvas)]
@@ -70,9 +70,9 @@
 (s/defn add-element-to-GUI
   "Add a GUIElement to the GUI tree recursively looking for the specified
   parent."
-  [element; :- sc/GUIElement
-   parent; :- s/Keyword
-   {:keys [GUI] :as screen}]
+  [element :- sc/GUIElement
+   parent :- s/Keyword
+   {:keys [GUI] :as screen} :- sc/Screen]
   (let [search (fn search [GUI-tree walk-list]
                  (let [elements (into [] (zipmap (:children GUI-tree) (range)))
                        found (some #(when (= (:id (first %)) parent)
