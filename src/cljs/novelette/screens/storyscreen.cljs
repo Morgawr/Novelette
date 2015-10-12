@@ -15,7 +15,7 @@
 ; TODO - Maybe remove the base state? It's only used in the init.
 (def BASE-STATE (sc/StoryState. '() '() #{} {} '() {} 0 true false
                                 (sc/Sprite. :dialogue-ui [0 0] 0) {} :cursor 0
-                                [0 0 0 0] [0 0] nil))
+                                [0 0 0 0] [0 0]))
 
 (s/defn update-cursor ; TODO - move this into the GUI
   [{:keys [state] :as screen} :- sc/Screen

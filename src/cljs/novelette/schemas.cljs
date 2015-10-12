@@ -9,9 +9,9 @@
 
 ; A position is either a pair of coordinates x/y or a tuple of four values x/y/w/h
 ; packed into a vector.
-(s/defschema pos (s/either [(s/one s/Int :x) (s/one s/Int :y)]
-                           [(s/one s/Int :x) (s/one s/Int :y)
-                            (s/one s/Int :width) (s/one s/Int :height)]))
+(s/defschema pos (s/cond-pre [(s/one s/Int :x) (s/one s/Int :y)]
+                             [(s/one s/Int :x) (s/one s/Int :y)
+                              (s/one s/Int :width) (s/one s/Int :height)]))
 
 ; A GUIEvent is one of the following enums.
 (s/defschema GUIEvent (s/enum :clicked :on-focus
@@ -22,7 +22,7 @@
 ; all the data for updating, rendering and handling a single state instance
 ; in the game. Multiple screens all packed together make the full state of the
 ; game.
-(s/defrecord Screen [id :- ( s/maybe (s/either s/Str s/Keyword)) ; Unique identifier of the screen
+(s/defrecord Screen [id :- (s/maybe (s/cond-pre s/Str s/Keyword)) ; Unique identifier of the screen
                      handle-input :- (s/maybe function) ; Function to handle input
                      update :- (s/maybe function) ; Function to update state
                      render :- (s/maybe function) ; Function to render on screen
@@ -30,8 +30,10 @@
                      canvas :- js/HTMLCanvasElement ; canvas of the game
                      context :- js/CanvasRenderingContext2D ; context of the canvas
                      next-frame :- (s/maybe function) ; What to do on the next game-loop
+                     ; TODO add GUI to all screens and base data structure
                      ]
   {s/Any s/Any})
+
 
 ; TODO - purge a lot of old data and cruft
 
@@ -43,7 +45,7 @@
 
 ; A GUIElement is the basic datatype used to handle GUI operations.
 (s/defrecord GUIElement [type :- s/Keyword; The element type.
-                         id :- (s/either s/Str s/Keyword) ; Name/id of the GUI element
+                         id :- (s/cond-pre s/Str s/Keyword) ; Name/id of the GUI element
                          position :- pos ; Coordinates of the element [x y w h]
                          content :- {s/Keyword s/Any} ; Local state of the element (i.e.: checkbox checked? radio selected? etc)
                          children :- [s/Any] ; Vector of children GUIElements.
@@ -56,7 +58,7 @@
 ; A sprite is different from an image, an image is a texture loaded into the
 ; engine's renderer with an id assigned as a reference. A sprite is an instance
 ; of a texture paired with appropriate positioning and rendering data.
-(s/defrecord Sprite [id :- s/Keyword; image id loaded in the engine
+(s/defrecord Sprite [id :- s/Keyword ; image id loaded in the engine
                      position :- pos ; X/Y coordinates in a vector
                      z-index :- s/Int ; depth ordering for rendering, lower = front
                      ; TODO - add scale and rotation
@@ -82,7 +84,6 @@
                          cursor-delta :- s/Num ; Delta to make the cursor float, just calculate % 4
                          dialogue-bounds :- [s/Int] ; x,y, width and height of the boundaries of text to be displayed
                          nametag-position :- [s/Int] ; x,y coordinates of the nametag in the UI
-                         GUI :- (s/maybe GUIElement) ; Base GUI element for the GUI system (the canvas)
                          ; TODO - add a "seen" map with all the dialogue options already seen
                          ;        to facilitate skipping of text.
                          ]

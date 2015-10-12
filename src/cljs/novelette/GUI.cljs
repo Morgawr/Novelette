@@ -21,12 +21,28 @@
 ; :canvas <-- There can only be one canvas in the whole game, it is the base GUI element
 ;             used to catch all the base events when nothing else is hit. It is the root of the tree.
 
+(s/defn absolute-position
+  "Calculate the absolute position given a list of ancestors and the currently
+  relative position within the parent element."
+  [ancestors :- [sc/GUIElement]
+   [x y] :- sc/pos]
+   (into [] (reduce #(map +  (:position %2) %1) [x y] ancestors)))
+
+(s/defn handle-input-event
+  "Given a GUIElement, screen and event type, act on the individual event."
+  [element :- sc/GUIElement
+   event :- sc/GUIEvent
+   screen :- sc/Screen]
+  (if (some? (event (:events element)))
+    ((event (:events element)) element screen)
+    [screen true]))
+
 (s/defn handle-input
   "Handles the input on the GUI engine. It delves into the subtree branch
   of the GUI element tree in a DFS and calls the appropriate handle-input
   function for each element until one of them returns false and stops
   propagating upwards."
-  [screen :- sc/Screen]
+  [{:keys [GUI] :as screen}]
   ; TODO - Walk through the input state and pass it to the GUI element tree.
   screen)
 
