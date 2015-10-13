@@ -27,5 +27,6 @@
                     [] ; no children yet
                     {} ; no events yet
                     true ; focus
+                    false ; hover
                     10000 ; very low priority in depth
                     render-canvas)))

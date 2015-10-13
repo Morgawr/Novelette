@@ -8,6 +8,7 @@
                         :y 0
                         :clicked? [false false]
                         :down? [false false]
+                        :enabled? true
                         }))
 
 (def mouse-key-map {0 0
@@ -23,6 +24,14 @@
     (let [x (- (.-clientX event) (.-left @BOUNDING-BOX))
           y (- (.-clientY event) (.-top @BOUNDING-BOX))]
       (swap! INPUT-STATE assoc :x x :y y))))
+
+(defn mouse-disable
+  [event]
+  (swap! INPUT-STATE assoc :enabled? false))
+
+(defn mouse-enable
+  [event]
+  (swap! INPUT-STATE assoc :enabled? true))
 
 (defn mouse-lclick-listener
   [event]
@@ -55,6 +64,8 @@
   (reset! BOUNDING-BOX (.getBoundingClientRect canvas))
   (.addEventListener canvas "contextmenu" mouse-rclick-listener)
   (events/listen canvas event-type/MOUSEMOVE mouse-move-listener)
+  (events/listen canvas event-type/MOUSEOUT mouse-disable)
+  (events/listen canvas event-type/MOUSEENTER mouse-enable)
   (events/listen canvas event-type/MOUSEDOWN mouse-down)
   (events/listen canvas event-type/MOUSEUP mouse-up)
   (events/listen canvas event-type/CLICK mouse-lclick-listener))

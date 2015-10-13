@@ -1,7 +1,8 @@
 (ns novelette.GUI
   (:require-macros [schema.core :as s])
   (:require [novelette.schemas :as sc]
-            [schema.core :as s]))
+            [schema.core :as s]
+            [novelette.input]))
 
 ; This file contains the whole codebase for the Novelette GUI engine.
 
@@ -25,8 +26,8 @@
   "Calculate the absolute position given a list of ancestors and the currently
   relative position within the parent element."
   [ancestors :- [sc/GUIElement]
-   [x y] :- sc/pos]
-   (into [] (reduce #(map +  (:position %2) %1) [x y] ancestors)))
+   position :- sc/pos]
+   (into [] (reduce #(map +  (:position %2) %1) position ancestors)))
 
 (s/defn handle-input-event
   "Given a GUIElement, screen and event type, act on the individual event."
@@ -37,14 +38,43 @@
     ((event (:events element)) element screen)
     [screen true]))
 
+
+; Event types are :clicked :on-focus :off-focus :on-hover :off-hover
+; as specified in the schema.cljs file
+(s/defn retrieve-event-trigger
+  "Analyze the current input state to apply the correct event to the given
+  GUI element."
+  [element :- sc/GUIElement
+   screen :- sc/Screen]
+  (let [{x :x y :y
+         clicked? :clicked?
+         enabled? :enabled?} @novelette.input/INPUT-STATE]
+    (.log js/console (str "Event on " (:id element) " @ " x " " y))
+    (.log js/console (str "Mouse is " (if enabled? "enabled" "disabled"))))
+  [screen true])
+
+(s/defn walk-GUI-events
+  "Walk through the GUI tree dispatching events."
+  [element :- sc/GUIElement
+   screen :- sc/Screen]
+  (let [walk-fn (fn [[screen continue?] element]
+                  (if continue?
+                    (walk-GUI-events element screen) ; Recursion, be careful on the depth!
+                    [screen continue?]))
+        [new-screen continue?] (reduce walk-fn [screen true] (:children element))]
+    (if continue?
+      (retrieve-event-trigger element new-screen)
+      [new-screen continue?])))
+
 (s/defn handle-input
-  "Handles the input on the GUI engine. It delves into the subtree branch
+  "Handle the input on the GUI engine. It delves into the subtree branch
   of the GUI element tree in a DFS and calls the appropriate handle-input
   function for each element until one of them returns false and stops
   propagating upwards."
   [{:keys [GUI] :as screen}]
-  ; TODO - Walk through the input state and pass it to the GUI element tree.
-  screen)
+  (if (:enabled? @novelette.input/INPUT-STATE)
+    (first (walk-GUI-events GUI screen))
+    screen))
 
 (s/defn render
   "Generic render function called recursively on all GUI elements on the screen."

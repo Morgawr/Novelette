@@ -34,7 +34,6 @@
                      ]
   {s/Any s/Any})
 
-
 ; TODO - purge a lot of old data and cruft
 
 (s/defrecord State [screen-list :- [Screen]
@@ -51,6 +50,7 @@
                          children :- [s/Any] ; Vector of children GUIElements.
                          events :- {GUIEvent function} ; Map of events.
                          focus? :- s/Bool ; Whether or not the element has focus status.
+                         hover? :- s/Bool ; Whether or not the element has hover status.
                          z-index :- s/Int ; Depth of the Element in relation to its siblings. lower = front
                          render :- function ; Render function called on the element.
                          ])
