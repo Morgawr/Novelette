@@ -1,15 +1,11 @@
 language: clojure
 sudo: false
 lein: lein2
-script: xvfb-run lein2 doo slimer tests once
+script: xvfb-run -a -- lein2 doo slimer tests once
 jdk:
   - openjdk7
 
 before_install:
-  - "export DISPLAY=:99.0"
-  - echo "Starting xvfb..."
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 3 # Need some time to init xvfb properly
   - echo "Installing slimer..."
   - wget http://download.slimerjs.org/releases/0.9.6/slimerjs-0.9.6.zip
   - unzip slimerjs-0.9.6.zip
