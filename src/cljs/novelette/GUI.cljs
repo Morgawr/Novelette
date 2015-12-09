@@ -50,7 +50,8 @@
    screen :- sc/Screen]
   (let [{x :x y :y
          clicked? :clicked?} @novelette.input/INPUT-STATE
-        bounding-box (absolute-position ancestors (:position element))])
+        bounding-box (absolute-position ancestors (:position element))
+        in-bounds? (utils/inside-bounds? [x y] bounding-box)]
     ; if the mouse is inside the bounding box:
     ;   -> check if the element has hover? as true
     ;      -> if yes, do nothing
@@ -64,8 +65,15 @@
     ;      -> if yes, call the :clicked event on the element
     ;      -> if no, do nothing
     ; TODO: figure out how to deal with on/off focus (keyboard tab-selection?)
-    ;(.log js/console (pr-str bounding-box)))
-  [screen true])
+    (cond
+      (and (some true? clicked?) in-bounds?)
+      (handle-input-event element :clicked screen)
+      (and (not (:hover? element)) in-bounds?)
+      (handle-input-event element :on-hover screen)
+      (and (:hover? element) (not in-bounds?))
+      (handle-input-event element :off-hover screen)
+      :else
+      [screen true])))
 
 (s/defn walk-GUI-events
   "Walk through the GUI tree dispatching events."
@@ -190,3 +198,43 @@
           new-children (vec (concat (subvec children 0 split-index)
                                     (subvec children (inc split-index))))]
       (assoc-in screen removal-path new-children))))
+
+; TODO - Maybe write test for this?
+(s/defn update-element
+  "Update the state of a given element inside the active GUI tree."
+  [id :- (s/cond-pre s/Str s/Keyword)
+   screen :- sc/Screen
+   keys :- [s/Keyword]
+   func :- sc/function
+   & args]
+  (let [search (find-element-path id (:GUI screen) [])]
+    (when (nil? search)
+      (throw (js/Error. (str id " id not found in GUI element list."))))
+    (let [path (create-children-path (:GUI screen) (conj search id))]
+      (update-in screen (concat [:GUI] path keys) #(apply func % args)))) )
+
+; TODO - Maybe write test for this?
+(s/defn assoc-element
+  "Replace the state of a given element inside the active GUI tree."
+  [id :- (s/cond-pre s/Str s/Keyword)
+   screen :- sc/Screen
+   keys :- [s/Keyword]
+   newstate :- s/Any]
+  (let [search (find-element-path id (:GUI screen) [])]
+    (when (nil? search)
+      (throw (js/Error. (str id " id not found in GUI element list."))))
+    (let [path (create-children-path (:GUI screen) (conj search id))]
+      (assoc-in screen (concat [:GUI] path keys) newstate))))
+
+(s/defn add-event-listener
+  "Add a new event listener to the GUI element. It overrides any previous one."
+  [element :- sc/GUIElement
+   event-type :- sc/GUIEvent
+   target :- sc/function]
+  (assoc-in element [:events event-type] target))
+
+(s/defn remove-event-listener
+  "Remove the event listener of the given type from the GUI element."
+  [element :- sc/GUIElement
+   event-type :- sc/GUIEvent]
+  (update element :events dissoc event-type))

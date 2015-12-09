@@ -39,6 +39,8 @@
 
 ; TODO - purge a lot of old data and cruft
 
+; TODO - turn (cond-pre s/Str s/Keyword) into a standardized id data type.
+
 (s/defrecord State [screen-list :- [Screen]
                     curr-time :- s/Num
                     context :- js/CanvasRenderingContext2D ; TODO - maybe invert order of this and canvas for consistency

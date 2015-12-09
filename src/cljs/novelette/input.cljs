@@ -4,6 +4,9 @@
             [goog.events :as events]
             [schema.core :as s]))
 
+; TODO - How do I deal with possible events being registered by the input
+; system but not processed in time by the engine so that the input state
+; changes?
 (def INPUT-STATE (atom {:x 0
                         :y 0
                         :clicked? [false false]

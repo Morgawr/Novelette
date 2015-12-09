@@ -132,4 +132,24 @@
   (is (= {:GUI data-elements-remove}
          (GUI/remove-element :third-layer-1 {:GUI data-elements}))))
 
+(deftest add-event-listener-test
+  (let [func (fn [a b] (+ a b))]
+    (is (= func (:clicked (:events (GUI/add-event-listener
+                                     {:id :button
+                                      :events {}}
+                                     :clicked func)))))
+    (is (= func (:clicked (:events (GUI/add-event-listener
+                                     {:id :button
+                                      :events {:clicked identity}}
+                                     :clicked func)))))))
+
+(deftest remove-event-listener-test
+  (let [func (fn [a b] (+ a b))]
+    (is (= {:id :button
+            :events {}}
+           (GUI/remove-event-listener
+             {:id :button
+              :events {:clicked func}}
+             :clicked)))))
+
 (run-tests)
