@@ -2,7 +2,7 @@
   (:require [cljs.test :refer-macros [deftest is run-tests]]
             [novelette.GUI :as GUI]))
 
-(def test-data
+(def data-paths
   {:id :first-layer
    :children [
               {:id :second-layer-1
@@ -43,25 +43,94 @@
                            :children []}]}]})
 
 
-(deftest find-GUI-element-path-test
+(deftest find-element-path-test
   (is (= [:first-layer]
-         (GUI/find-GUI-element-path :second-layer-1 test-data [])))
+         (GUI/find-element-path :second-layer-1 data-paths [])))
   (is (= [:first-layer]
-         (GUI/find-GUI-element-path :second-layer-2 test-data [])))
+         (GUI/find-element-path :second-layer-2 data-paths [])))
   (is (= [:first-layer :second-layer-2]
-         (GUI/find-GUI-element-path :third-layer-3 test-data [])))
+         (GUI/find-element-path :third-layer-3 data-paths [])))
   (is (= [:first-layer :second-layer-2 :third-layer-2]
-         (GUI/find-GUI-element-path :fourth-layer-1 test-data [])))
+         (GUI/find-element-path :fourth-layer-1 data-paths [])))
   (is (not (= [:first-layer :second-layer-2 :third-layer-3]
-         (GUI/find-GUI-element-path :fourth-layer-1 test-data []))))
-  (is (= [] (GUI/find-GUI-element-path :first-layer test-data [])))
-  (is (= nil (GUI/find-GUI-element-path :non-existent-layer test-data []))))
+         (GUI/find-element-path :fourth-layer-1 data-paths []))))
+  (is (= [] (GUI/find-element-path :first-layer data-paths [])))
+  (is (= nil (GUI/find-element-path :non-existent-layer data-paths []))))
 
-(deftest create-GUI-children-path
+(deftest create-children-path
   (is (= [:children 1 :children 2]
-         (GUI/create-GUI-children-path
-           test-data [:first-layer :second-layer-2 :third-layer-3])))
-  (is (= [] (GUI/create-GUI-children-path test-data [:first-layer])))
-  (is (= nil (GUI/create-GUI-children-path test-data [:first-layer :non-existent-layer :test]))))
+         (GUI/create-children-path
+           data-paths [:first-layer :second-layer-2 :third-layer-3])))
+  (is (= [] (GUI/create-children-path data-paths [:first-layer])))
+  (is (= nil (GUI/create-children-path data-paths [:first-layer :non-existent-layer :test]))))
+
+(def data-elements
+  {:id :first-layer
+   :children [
+              {:id :second-layer-1
+               :children [
+                          {:id :third-layer-1
+                           :children []}
+                          {:id :third-layer-2
+                           :children []}]}
+              {:id :second-layer-2
+               :children []}]})
+
+(def data-elements-replace
+  {:id :first-layer
+   :children [
+              {:id :second-layer-1
+               :children [
+                          {:id :third-layer-1
+                           :children [
+                                      {:id :fourth-layer-1
+                                       :children []}]}
+                          {:id :third-layer-2
+                           :children []}]}
+              {:id :second-layer-2
+               :children []}]})
+
+(def data-elements-remove
+  {:id :first-layer
+   :children [
+              {:id :second-layer-1
+               :children [
+                          {:id :third-layer-2
+                           :children []}]}
+              {:id :second-layer-2
+               :children []}]})
+
+(def data-elements-add
+  {:id :first-layer
+   :children [
+              {:id :second-layer-1
+               :children [
+                          {:id :third-layer-1
+                           :children []}
+                          {:id :third-layer-2
+                           :children []}
+                          {:id :third-layer-3
+                           :children []}]}
+              {:id :second-layer-2
+               :children []}]})
+
+(def to-replace
+  {:id :third-layer-1
+   :children [
+              {:id :fourth-layer-1
+               :children []}]})
+
+(deftest add-element-test
+  (is (= {:GUI data-elements-add}
+         (GUI/add-element {:id :third-layer-3
+                           :children []} :second-layer-1 {:GUI data-elements}))))
+(deftest replace-element-test
+  (is (= {:GUI data-elements-replace}
+         (GUI/replace-element to-replace :third-layer-1 {:GUI data-elements}))))
+
+(deftest remove-element-test
+  (is (= {:GUI data-elements-remove}
+         (GUI/remove-element :third-layer-1 {:GUI data-elements}))))
+
 
 (run-tests)

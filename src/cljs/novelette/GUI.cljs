@@ -109,7 +109,7 @@
     ; stack but it shouldn't be worse... I hope.
     (render x (conj ancestors element))))
 
-(s/defn find-GUI-element-path
+(s/defn find-element-path
   "Recursively look for a specific ID of a GUI element in a GUI tree.
   If the element is found, return a path of IDs to reach it, otherwise nil."
   [id :- (s/cond-pre s/Str s/Keyword)
@@ -123,11 +123,11 @@
       found? next-walk-list
       :else (let [result
                   (keep identity
-                        (map #(find-GUI-element-path id % next-walk-list)
+                        (map #(find-element-path id % next-walk-list)
                              (:children GUI-tree)))]
               (when (seq result) (first result))))))
 
-(s/defn create-GUI-children-path
+(s/defn create-children-path
   "Given a list of IDs and the root of the tree, create a path."
   [root :- sc/GUIElement
    ancestors :- [s/Any]]
@@ -150,27 +150,42 @@
   [{GUI :GUI} :- sc/Screen]
   (render GUI '()))
 
-(s/defn replace-GUI-element
+(s/defn replace-element
   "Find an element in the GUI tree and replace it with the new one."
   [element :- sc/GUIElement
    id :- (s/cond-pre s/Str s/Keyword)
    {:keys [GUI] :as screen} :- sc/Screen]
-  (let [search (find-GUI-element-path id GUI [])]
+  (let [search (find-element-path id GUI [])]
     (when (nil? search)
       (throw (js/Error. (str id " id not found in GUI element list."))))
     (if (seq search)
-      (let [path (create-GUI-children-path GUI search)]
-        (assoc-in screen (concat [:GUI :children] path) element))
+      (let [path (create-children-path GUI (conj search id))]
+        (assoc-in screen (concat [:GUI] path) element))
       (assoc screen :GUI element))))
 
-(s/defn add-GUI-element
+(s/defn add-element
   "Add a GUIElement to the GUI tree given the specified parent ID."
   [element :- sc/GUIElement
    parent :- (s/cond-pre s/Str s/Keyword)
    {:keys [GUI] :as screen} :- sc/Screen]
-  (let [search (find-GUI-element-path parent GUI [])]
+  (let [search (find-element-path parent GUI [])]
     (when (nil? search)
       (throw (js/Error. (str parent " id not found in GUI element list."))))
-    (let [path (create-GUI-children-path GUI search)]
-      (update-in screen (concat [:GUI :children] path [:children])
+    (let [path (create-children-path GUI (conj search parent))]
+      (update-in screen (concat [:GUI] path [:children])
                  conj element))))
+
+(s/defn remove-element
+  "Remove a GUIElement from the GUI tree given the ID."
+  [id :- (s/cond-pre s/Str s/Keyword)
+   {:keys [GUI] :as screen} :- sc/Screen]
+  (let [search (find-element-path id GUI [])]
+    (when (nil? search)
+      (throw (js/Error. (str id " id not found in GUI element list."))))
+    (let [path (create-children-path GUI (conj search id))
+          removal-path (concat [:GUI] (pop path))
+          split-index (last path)
+          children (get-in screen removal-path)
+          new-children (vec (concat (subvec children 0 split-index)
+                                    (subvec children (inc split-index))))]
+      (assoc-in screen removal-path new-children))))

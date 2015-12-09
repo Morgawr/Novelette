@@ -2,7 +2,8 @@
   :description "ClojureScript engine for visual novels."
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.170"]
-                 [prismatic/schema "1.0.1"]]
+                 [prismatic/schema "1.0.1"]
+                 [lein-doo "0.1.6"]]
   :plugins [[lein-cljsbuild "1.1.1"]
             [lein-doo "0.1.6"]]
   :hooks [leiningen.cljsbuild]
