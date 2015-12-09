@@ -131,17 +131,16 @@
    canvas :- js/HTMLCanvasElement
    gamestate :- sc/StoryState]
   (into gscreen/BASE-SCREEN
-   {
-    :id "StoryScreen"
-    :update screen-update
-    :render render
-    :handle-input handle-input
-    :context ctx
-    :canvas canvas
-    :deinit (fn [s] nil)
-    :state gamestate
-    :storyteller (sc/StoryTeller. @st/RT-HOOKS {:type :dummy} 0 {} false)
-    :GUI (novelette.GUI.canvas/create-canvas-element canvas ctx "black")
-    }))
+        {
+         :id "StoryScreen"
+         :update screen-update
+         :render render
+         :handle-input handle-input
+         :context ctx
+         :canvas canvas
+         :deinit (fn [s] nil)
+         :state gamestate
+         :storyteller (sc/StoryTeller. @st/RT-HOOKS {:type :dummy} 0 {} false)
+         :GUI (novelette.GUI.canvas/create-canvas-element canvas ctx "black")}))
 ; TODO - Find a way to properly pass user-provided init data to the canvas
 ; and other possible GUI elements. In this case it's the 'black' color.

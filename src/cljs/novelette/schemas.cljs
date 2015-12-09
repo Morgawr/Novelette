@@ -9,9 +9,12 @@
 
 ; A position is either a pair of coordinates x/y or a tuple of four values x/y/w/h
 ; packed into a vector.
-(s/defschema pos (s/cond-pre [(s/one s/Int :x) (s/one s/Int :y)]
-                             [(s/one s/Int :x) (s/one s/Int :y)
-                              (s/one s/Int :width) (s/one s/Int :height)]))
+(s/defschema pos (s/conditional
+                   #(= (count %) 2) [(s/one s/Int :x) (s/one s/Int :y)]
+                   #(= (count %) 4) [(s/one s/Int :x)
+                                     (s/one s/Int :y)
+                                     (s/one s/Int :width)
+                                     (s/one s/Int :height)]))
 
 ; A GUIEvent is one of the following enums.
 (s/defschema GUIEvent (s/enum :clicked :on-focus

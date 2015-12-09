@@ -28,7 +28,8 @@
   relative position within the parent element."
   [ancestors :- [sc/GUIElement]
    position :- sc/pos]
-   (vec (reduce #(map +  (:position %2) %1) position ancestors)))
+   (vec (reduce #(update (update %1 0 + ((:position %2) 0))
+                         1 + ((:position %2) 1)) position ancestors)))
 
 (s/defn handle-input-event
   "Given a GUIElement, screen and event type, act on the individual event."

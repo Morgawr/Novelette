@@ -5,6 +5,8 @@
             [novelette.schemas :as sc]
             [schema.core :as s]))
 
+; TODO - re-work the entire text rendering engine
+
 (s/defn clear-context
   [screen :- sc/Screen]
   (let [ctx (:context screen)
@@ -45,7 +47,7 @@
 
 (s/defn draw-sprite
   [ctx :- js/CanvasRenderingContext2D
-   {:keys [id position]} :- sc/Sprite] 
+   {:keys [id position]} :- sc/Sprite]
   (draw-image ctx position id))
 
 (s/defn fill-clear
@@ -57,18 +59,27 @@
              (.-width canvas)
              (.-height canvas)))
 
+(s/defn draw-rectangle
+  [ctx :- js/CanvasRenderingContext2D
+   color :- s/Str
+   pos :- sc/pos]
+  (set! (.-fillStyle ctx) color)
+  (.fillRect ctx (pos 0) (pos 1) (pos 2) (pos 3)))
+
 (s/defn draw-text
   [ctx :- js/CanvasRenderingContext2D
    pos :- sc/pos
    text :- s/Str
    attr ; TODO - Figure out the data type of this
    color :- s/Str]
+  (.save ctx)
   (set! (.-textBaseline ctx) "top")
   (set! (.-font ctx) (str attr " " FONT))
   (set! (.-fillStyle ctx) color)
   (.fillText ctx text
              (first pos)
-             (second pos)))
+             (second pos))
+  (.restore ctx))
 
 (s/defn measure-text-length
   [ctx :- js/CanvasRenderingContext2D
@@ -83,10 +94,13 @@
    color :- s/Str
    cursor-id :- s/Keyword
    cursor-y-offset :- s/Int]
+  (.save ctx)
+  (set! (.-font ctx) (str attr " " FONT))
   (draw-text ctx pos text attr color)
   (let [width (measure-text-length ctx text)
         [x y] pos]
-    (draw-image ctx [(+ x width 2) (+ y 14 cursor-y-offset)] cursor-id)))
+    (draw-image ctx [(+ x width 2) (+ y 14 cursor-y-offset)] cursor-id))
+  (.restore ctx))
 
 (s/defn draw-text-centered
   [ctx :- js/CanvasRenderingContext2D
@@ -94,10 +108,12 @@
    text :- s/Str
    attr ; TODO - Figure out the data type of this
    color :- s/Str]
+  (.save ctx)
   (set! (.-font ctx) (str attr " " FONT))
   (let [width (measure-text-length ctx text)
         newx (int (- (first pos) (/ width 2)))]
-    (draw-text ctx [newx (second pos)] text attr color)))
+    (draw-text ctx [newx (second pos)] text attr color))
+  (.restore ctx))
 
 (s/defn split-index
   [msg :- s/Str
@@ -121,7 +137,7 @@
    color :- s/Str
    maxlength :- s/Int
    spacing :- s/Int]
-  (loop [msgs msg 
+  (loop [msgs msg
          [_ y] pos]
     (let [res (split-index msgs maxlength)
           first-msg (clojure.string/join (first res))

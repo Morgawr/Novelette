@@ -132,5 +132,4 @@
   (is (= {:GUI data-elements-remove}
          (GUI/remove-element :third-layer-1 {:GUI data-elements}))))
 
-
 (run-tests)
