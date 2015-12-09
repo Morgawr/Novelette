@@ -103,7 +103,9 @@
   [{:keys [state context] :as screen} :- sc/Screen
    on-top :- s/Bool]
   (let [bgs (reverse (:backgrounds state))
-        sps (if (seq (:spriteset state)) (utils/sort-z-index ((apply juxt (:spriteset state)) (:sprites state))) [])]
+        sps (if (seq (:spriteset state))
+              (utils/sort-z-index ((apply juxt (:spriteset state))
+                                   (:sprites state))) [])]
     (GUI/render-gui screen)
     (doseq [s bgs]
       (r/draw-image context [0 0] s))

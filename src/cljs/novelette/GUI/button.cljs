@@ -3,6 +3,7 @@
   (:require [novelette.schemas :as sc]
             [schema.core :as s]
             [novelette.render]
+            [novelette.utils :as u]
             [novelette.GUI :as GUI]))
 
 (s/defn render-button
@@ -15,11 +16,8 @@
    ancestors :- [sc/GUIElement]]
   (let [abs-position (GUI/absolute-position ancestors position)
         text-center (GUI/absolute-position ancestors
-                                           [(+ (position 0) ; X coordinate of the center
-                                               (/ (position 2) 2))
-                                            (- (+ (position 1) ; Y coordinate of the center
-                                                  (/ (position 3) 2))
-                                               (/ font-size 2))])]
+                                           (update (u/get-center-coordinates position)
+                                                   1 #(- % (/ font-size 2))))]
     (novelette.render/draw-rectangle ctx bg-color abs-position)
     (novelette.render/draw-text-centered ctx text-center text (str font-size "px") fg-color))
   nil)
