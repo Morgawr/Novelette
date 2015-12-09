@@ -25,7 +25,7 @@
 (s/defn create-button-element
   "Creates a new button GUI element with sane defaults."
   [ctx :- js/CanvasRenderingContext2D
-   id :- (s/cond-pre s/Str s/Keyword)
+   id :- sc/id
    text :- s/Str
    position :- sc/pos
    z-index :- s/Int

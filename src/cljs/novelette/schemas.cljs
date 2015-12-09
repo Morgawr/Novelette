@@ -16,6 +16,9 @@
                                      (s/one s/Int :width)
                                      (s/one s/Int :height)]))
 
+; The id of an element can either be a string or a keyword (prefer using keywords).
+(s/defschema id (s/cond-pre s/Str s/Keyword))
+
 ; A GUIEvent is one of the following enums.
 (s/defschema GUIEvent (s/enum :clicked :on-focus
                               :off-focus :on-hover
@@ -25,7 +28,7 @@
 ; all the data for updating, rendering and handling a single state instance
 ; in the game. Multiple screens all packed together make the full state of the
 ; game.
-(s/defrecord Screen [id :- (s/maybe (s/cond-pre s/Str s/Keyword)) ; Unique identifier of the screen
+(s/defrecord Screen [id :- (s/maybe id) ; Unique identifier of the screen
                      handle-input :- (s/maybe function) ; Function to handle input
                      update :- (s/maybe function) ; Function to update state
                      render :- (s/maybe function) ; Function to render on screen
@@ -39,8 +42,6 @@
 
 ; TODO - purge a lot of old data and cruft
 
-; TODO - turn (cond-pre s/Str s/Keyword) into a standardized id data type.
-
 (s/defrecord State [screen-list :- [Screen]
                     curr-time :- s/Num
                     context :- js/CanvasRenderingContext2D ; TODO - maybe invert order of this and canvas for consistency
@@ -49,7 +50,7 @@
 
 ; A GUIElement is the basic datatype used to handle GUI operations.
 (s/defrecord GUIElement [type :- s/Keyword; The element type.
-                         id :- (s/cond-pre s/Str s/Keyword) ; Name/id of the GUI element
+                         id :- id ; Name/id of the GUI element
                          position :- pos ; Coordinates of the element [x y w h]
                          content :- {s/Keyword s/Any} ; Local state of the element (i.e.: checkbox checked? radio selected? etc)
                          children :- [s/Any] ; Vector of children GUIElements. TODO - maybe turn this into a map

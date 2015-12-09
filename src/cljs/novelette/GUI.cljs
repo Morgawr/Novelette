@@ -121,7 +121,7 @@
 (s/defn find-element-path
   "Recursively look for a specific ID of a GUI element in a GUI tree.
   If the element is found, return a path of IDs to reach it, otherwise nil."
-  [id :- (s/cond-pre s/Str s/Keyword)
+  [id :- sc/id
    GUI-tree :- sc/GUIElement
    walk-list :- [s/Any]]
   (let [found? (seq (filter #(= (:id %) id) (:children GUI-tree)))
@@ -162,7 +162,7 @@
 (s/defn replace-element
   "Find an element in the GUI tree and replace it with the new one."
   [element :- sc/GUIElement
-   id :- (s/cond-pre s/Str s/Keyword)
+   id :- sc/id
    {:keys [GUI] :as screen} :- sc/Screen]
   (let [search (find-element-path id GUI [])]
     (when (nil? search)
@@ -175,7 +175,7 @@
 (s/defn add-element
   "Add a GUIElement to the GUI tree given the specified parent ID."
   [element :- sc/GUIElement
-   parent :- (s/cond-pre s/Str s/Keyword)
+   parent :- sc/id
    {:keys [GUI] :as screen} :- sc/Screen]
   (let [search (find-element-path parent GUI [])]
     (when (nil? search)
@@ -186,7 +186,7 @@
 
 (s/defn remove-element
   "Remove a GUIElement from the GUI tree given the ID."
-  [id :- (s/cond-pre s/Str s/Keyword)
+  [id :- sc/id
    {:keys [GUI] :as screen} :- sc/Screen]
   (let [search (find-element-path id GUI [])]
     (when (nil? search)
@@ -202,7 +202,7 @@
 ; TODO - Maybe write test for this?
 (s/defn update-element
   "Update the state of a given element inside the active GUI tree."
-  [id :- (s/cond-pre s/Str s/Keyword)
+  [id :- sc/id
    screen :- sc/Screen
    keys :- [s/Keyword]
    func :- sc/function
@@ -216,7 +216,7 @@
 ; TODO - Maybe write test for this?
 (s/defn assoc-element
   "Replace the state of a given element inside the active GUI tree."
-  [id :- (s/cond-pre s/Str s/Keyword)
+  [id :- sc/id
    screen :- sc/Screen
    keys :- [s/Keyword]
    newstate :- s/Any]
