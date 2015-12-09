@@ -6,8 +6,11 @@ jdk:
   - openjdk7
 
 before_install:
+  - "export DISPLAY=:99.0"
+  - echo "Starting xvfb..."
   - "sh -e /etc/init.d/xvfb start"
-  - echo "Installing slimer"
+  - sleep 3 # Need some time to init xvfb properly
+  - echo "Installing slimer..."
   - wget http://download.slimerjs.org/releases/0.9.6/slimerjs-0.9.6.zip
   - unzip slimerjs-0.9.6.zip
   - export PATH="$PWD/slimerjs-0.9.6/:$PATH"
