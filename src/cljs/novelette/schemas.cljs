@@ -47,7 +47,7 @@
                          id :- (s/cond-pre s/Str s/Keyword) ; Name/id of the GUI element
                          position :- pos ; Coordinates of the element [x y w h]
                          content :- {s/Keyword s/Any} ; Local state of the element (i.e.: checkbox checked? radio selected? etc)
-                         children :- [s/Any] ; Vector of children GUIElements.
+                         children :- [s/Any] ; Vector of children GUIElements. TODO - maybe turn this into a map
                          events :- {GUIEvent function} ; Map of events.
                          focus? :- s/Bool ; Whether or not the element has focus status.
                          hover? :- s/Bool ; Whether or not the element has hover status.

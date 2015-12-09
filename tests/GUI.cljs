@@ -1,124 +1,67 @@
 (ns novelette.tests.GUI
-  (:require-macros [cemerick.cljs.test
-                    :refer (is deftest run-tests)])
-  (:require [cemerick.cljs.test :as t]
+  (:require [cljs.test :refer-macros [deftest is run-tests]]
             [novelette.GUI :as GUI]))
 
-;(defn dummy-render 
-;  [element ancestors]
-;  (println "Dummy render for" (:id  element) "called."))
-;
-;(def dialog
-;  {:type :dialog
-;   :id :dialog-one
-;   :position [200 200 200 200]
-;   :content {:text "test-dialog?"}
-;   :children [{:type :button
-;               :id :button-one
-;               :position [10 10 50 50]
-;               :content {:text "Yes"}
-;               :children []
-;               :events {}
-;               :focus? true
-;               :z-index 4
-;               :render dummy-render}
-;              {:type :button
-;               :id :button-two
-;               :position [70 10 50 50]
-;               :content {:text "No"}
-;               :children []
-;               :events {}
-;               :focus? false
-;               :z-index 4
-;               :render dummy-render}]
-;   :events {}
-;   :focus? false
-;   :z-index 4
-;   :render dummy-render})
-;
-;(def extra-button
-;  {:type :button
-;   :id :button-three
-;   :position [10 10 50 50]
-;   :content {:text "Maybe"}
-;   :children []
-;   :events {}
-;   :focus? true
-;   :z-index 4
-;   :render dummy-render})
-;
-;(def dialog-extra-button
-;  {:type :dialog
-;   :id :dialog-one
-;   :position [200 200 200 200]
-;   :content {:text "test-dialog?"}
-;   :children [ {:type :button
-;                :id :button-one
-;                :position [10 10 50 50]
-;                :content {:text "Yes"}
-;                :children []
-;                :events {}
-;                :focus? true
-;                :z-index 4
-;                :render dummy-render}
-;              {:type :button
-;               :id :button-two
-;               :position [70 10 50 50]
-;               :content {:text "No"}
-;               :children []
-;               :events {}
-;               :focus? false
-;               :z-index 4
-;               :render dummy-render}
-;              extra-button]
-;   :events {}
-;   :focus? false
-;   :z-index 4
-;   :render dummy-render})
-;
-;(def tree-no-dialog
-;  {:type :canvas
-;   :id :canvas
-;   :position [0 0 1920 1080]
-;   :content {}
-;   :children []
-;   :events {}
-;   :focus? false
-;   :z-index 10000
-;   :render dummy-render})
-;
-;(def tree-with-dialog
-;  {:type :canvas
-;   :id :canvas
-;   :position [0 0 1920 1080]
-;   :content {}
-;   :children [dialog]
-;   :events {}
-;   :focus? false
-;   :z-index 10000
-;   :render dummy-render})
-;
-;(def tree-with-extra-button-dialog
-;  {:type :canvas
-;   :id :canvas
-;   :position [0 0 1920 1080]
-;   :content {}
-;   :children [dialog-extra-button]
-;   :events {}
-;   :focus? false
-;   :z-index 10000
-;   :render dummy-render})
-;
-;(defn build-fake-GUI-screen
-;  [GUI-element]
-;  {:GUI GUI-element})
-;
-;(deftest add-element-to-GUI
-;  (is (= (build-fake-GUI-screen tree-with-dialog)
-;         (GUI/add-element-to-GUI dialog 
-;                                 :canvas
-;                                 (build-fake-GUI-screen tree-no-dialog))))
-;  (is (= (build-fake-GUI-screen tree-with-extra-button-dialog)
-;         (GUI/add-element-to-GUI extra-button 
-;                                 :dialog-one
-;                                 (build-fake-GUI-screen tree-with-dialog)))))
+(def test-data
+  {:id :first-layer
+   :children [
+              {:id :second-layer-1
+               :children []}
+              {:id :second-layer-2
+               :children [
+                         {:id :third-layer-1
+                          :children []}
+                         {:id :third-layer-2
+                          :children [
+                                     {:id :fourth-layer-1
+                                      :children []}
+                                     {:id :fourth-layer-2
+                                      :children []}
+                                     {:id :fourth-layer-3
+                                      :children [
+                                                 {:id :fifth-layer-1
+                                                  :children []}
+                                                 {:id :fifth-layer-2
+                                                  :children []}]}
+                                     {:id :fourth-layer-4
+                                      :children []}]}
+                         {:id :third-layer-3
+                          :children []}]}
+              {:id :second-layer-3
+               :children []}
+              {:id :second-layer-4
+               :children [
+                          {:id :third-layer-4
+                           :children [
+                                      {:id :fourth-layer-5
+                                       :children [
+                                                  {:id :fifth-layer-3
+                                                   :children []}]}
+                                      {:id :fourth-layer-6
+                                       :chilren []}]}
+                          {:id :third-layer-5
+                           :children []}]}]})
+
+
+(deftest find-GUI-element-path-test
+  (is (= [:first-layer]
+         (GUI/find-GUI-element-path :second-layer-1 test-data [])))
+  (is (= [:first-layer]
+         (GUI/find-GUI-element-path :second-layer-2 test-data [])))
+  (is (= [:first-layer :second-layer-2]
+         (GUI/find-GUI-element-path :third-layer-3 test-data [])))
+  (is (= [:first-layer :second-layer-2 :third-layer-2]
+         (GUI/find-GUI-element-path :fourth-layer-1 test-data [])))
+  (is (not (= [:first-layer :second-layer-2 :third-layer-3]
+         (GUI/find-GUI-element-path :fourth-layer-1 test-data []))))
+  (is (= [] (GUI/find-GUI-element-path :first-layer test-data [])))
+  (is (= nil (GUI/find-GUI-element-path :non-existent-layer test-data []))))
+
+(deftest create-GUI-children-path
+  (is (= [:children 1 :children 2]
+         (GUI/create-GUI-children-path
+           test-data [:first-layer :second-layer-2 :third-layer-3])))
+  (is (= [] (GUI/create-GUI-children-path test-data [:first-layer])))
+  (is (= nil (GUI/create-GUI-children-path test-data [:first-layer :non-existent-layer :test]))))
+
+(run-tests)
