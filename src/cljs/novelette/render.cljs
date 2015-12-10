@@ -7,6 +7,8 @@
             [novelette.utils :as u]))
 
 ; TODO - re-work the entire text rendering engine
+; TODO - re-work the color system so we support alpha values
+; TODO - properly implement ctx.save() ctx.restore()
 
 (s/defn clear-context
   "Refresh and clear the whole canvas surface context."
@@ -26,14 +28,14 @@
 
 (s/defn load-error
   [uri :- s/Str
-   sym :- s/Keyword]
+   sym :- sc/id]
   (let [window (dom/getWindow)]
     (.setTimeout window #(load-image uri sym) 200)))
 
 (s/defn load-image
   "Load the given image under the given keyword in the engine's buffer."
   [uri :- s/Str
-   sym :- s/Keyword]
+   sym :- sc/id]
   (let [image (js/Image. )]
     (set! (.-onload image) #(swap! IMAGE-MAP assoc sym image))
     (set! (.-onerror image) #(load-error uri sym))
@@ -43,7 +45,7 @@
   "Draw the image on the canvas given the coordinates and the id of the image."
   [ctx :- js/CanvasRenderingContext2D
    pos :- sc/pos
-   name :- s/Keyword]
+   name :- sc/id]
   (let [image (name @IMAGE-MAP)]
     (.drawImage ctx image
                 (first pos)
@@ -102,7 +104,7 @@
    text :- s/Str
    attr ; TODO - Figure out the data type of this
    color :- s/Str
-   cursor-id :- s/Keyword
+   cursor-id :- sc/id
    cursor-y-offset :- s/Int]
   (.save ctx)
   (set! (.-font ctx) (str attr " " FONT))

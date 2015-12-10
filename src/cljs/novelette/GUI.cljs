@@ -23,6 +23,9 @@
 ; :canvas <-- There can only be one canvas in the whole game, it is the base GUI element
 ;             used to catch all the base events when nothing else is hit. It is the root of the tree.
 
+; TODO - Change name of functions for GUI widgets so that they don't repeat themselves.
+; For example novelette.GUI.button/create-button-element -> novelette.GUI.button/create
+
 (s/defn absolute-position
   "Calculate the absolute position given a list of ancestors and the currently
   relative position within the parent element."

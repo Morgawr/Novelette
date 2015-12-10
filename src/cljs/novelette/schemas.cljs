@@ -22,7 +22,7 @@
 ; A GUIEvent is one of the following enums.
 (s/defschema GUIEvent (s/enum :clicked :on-focus
                               :off-focus :on-hover
-                              :off-over))
+                              :off-hover))
 
 ; This is the screen, a screen is the base data structure that contains
 ; all the data for updating, rendering and handling a single state instance
@@ -64,7 +64,7 @@
 ; A sprite is different from an image, an image is a texture loaded into the
 ; engine's renderer with an id assigned as a reference. A sprite is an instance
 ; of a texture paired with appropriate positioning and rendering data.
-(s/defrecord Sprite [id :- s/Keyword ; image id loaded in the engine
+(s/defrecord Sprite [id :- id ; image id loaded in the engine
                      position :- pos ; X/Y coordinates in a vector
                      z-index :- s/Int ; depth ordering for rendering, lower = front
                      ; TODO - add scale and rotation

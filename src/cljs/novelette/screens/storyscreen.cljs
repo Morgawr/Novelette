@@ -6,7 +6,6 @@
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
             [novelette.storyteller :as st]
-            [novelette.GUI :as g]
             [novelette.schemas :as sc]
             [novelette.utils :as utils]
             [clojure.string :as string]
@@ -120,7 +119,7 @@
         (render-choice screen))))
   screen) ; TODO This might just return nothing? render in any case shouldn't be stateful
 
-(s/defn handle-input ; TODO - send events to GUI hooks
+(s/defn handle-input
   [screen :- sc/Screen
    on-top :- s/Bool
    input :- {s/Any s/Any}]

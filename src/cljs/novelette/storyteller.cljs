@@ -140,28 +140,28 @@
 
 (s/defn add-sprite
   [screen :- sc/Screen
-   id :- s/Keyword]
+   id :- sc/id]
   (-> screen
       (update-in [:state :spriteset] conj id)
       (advance-step)))
 
 (s/defn remove-sprite
   [screen :- sc/Screen
-   id :- s/Keyword]
+   id :- sc/id]
   (-> screen
       (update-in [:state :spriteset] disj id)
       (advance-step)))
 
 (s/defn clear-sprites
   [screen :- sc/Screen
-   id :- s/Keyword]
+   id :- sc/id]
   (-> screen
       (assoc-in [:state :spriteset] #{})
       (advance-step)))
 
 (s/defn teleport-sprite
   [screen :- sc/Screen
-   id :- s/Keyword
+   id :- sc/id
    position :- sc/pos]
   (-> screen
       (assoc-in [:state :sprites id :position] position)
@@ -169,8 +169,8 @@
 
 (s/defn decl-sprite
   [screen :- sc/Screen
-   id :- s/Keyword
-   img :- s/Keyword
+   id :- sc/id
+   img :- sc/id
    pos :- sc/pos
    z-index :- s/Int]
   (-> screen
@@ -187,7 +187,7 @@
 
 (s/defn push-background
   [screen :- sc/Screen
-   id :- s/Keyword]
+   id :- sc/id]
   (-> screen
       (update-in [:state :backgrounds] conj id)
       (advance-step)))
@@ -212,7 +212,7 @@
 
 (s/defn set-ui
   [screen :- sc/Screen
-   id :- s/Keyword
+   id :- sc/id
    pos :- sc/pos]
   (-> screen
       (update-in [:state :ui-img] merge {:id id :position pos})
@@ -258,7 +258,7 @@
 
 (s/defn play-bgm
   [screen :- sc/Screen
-   id :- s/Keyword]
+   id :- sc/id]
   (snd/play-bgm id)
   (advance-step screen))
 
