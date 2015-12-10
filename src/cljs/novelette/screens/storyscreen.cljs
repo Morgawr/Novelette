@@ -105,7 +105,7 @@
         sps (if (seq (:spriteset state))
               (utils/sort-z-index ((apply juxt (:spriteset state))
                                    (:sprites state))) [])]
-    (GUI/render-gui screen)
+    (GUI/render screen)
     (doseq [s bgs]
       (r/draw-image context [0 0] s))
     (when on-top
@@ -142,6 +142,6 @@
          :deinit (fn [s] nil)
          :state gamestate
          :storyteller (sc/StoryTeller. @st/RT-HOOKS {:type :dummy} 0 {} false)
-         :GUI (novelette.GUI.canvas/create-canvas-element canvas ctx "black")}))
+         :GUI (novelette.GUI.canvas/create canvas ctx "black")}))
 ; TODO - Find a way to properly pass user-provided init data to the canvas
 ; and other possible GUI elements. In this case it's the 'black' color.

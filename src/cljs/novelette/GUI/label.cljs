@@ -6,7 +6,7 @@
             [novelette.utils :as u]
             [novelette.GUI :as GUI]))
 
-(s/defn render-label
+(s/defn render
   [{{ctx :context
      bg-color :bg-color
      fg-color :fg-color
@@ -24,7 +24,7 @@
     (novelette.render/draw-text-centered ctx text-center text (str font-size "px") fg-color))
   nil)
 
-(s/defn create-label-element
+(s/defn create
   "Creates a new label GUI element with sane defaults."
   [ctx :- js/CanvasRenderingContext2D
    id :- sc/id
@@ -46,4 +46,4 @@
                     false ; focus
                     false ; hover
                     z-index
-                    render-label)))
+                    render)))

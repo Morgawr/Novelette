@@ -4,15 +4,15 @@
             [schema.core :as s]
             [novelette.render]))
 
-(s/defn render-canvas
-  [{{ctx :context 
+(s/defn render
+  [{{ctx :context
      canvas :entity
      base-color :base-color} :content} :- sc/GUIElement
    ancestors :- [sc/GUIElement]]
   (novelette.render/fill-clear canvas ctx base-color )
   nil)
 
-(s/defn create-canvas-element
+(s/defn create
   "Creates a new canvas GUI element with sane defaults."
   [canvas :- js/HTMLCanvasElement
    ctx :- js/CanvasRenderingContext2D
@@ -29,4 +29,4 @@
                     true ; focus
                     false ; hover
                     10000 ; very low priority in depth
-                    render-canvas)))
+                    render)))

@@ -104,7 +104,7 @@
     (first (walk-GUI-events GUI '() screen))
     screen))
 
-(s/defn render
+(s/defn render-gui
   "Generic render function called recursively on all GUI elements on the screen."
   [element :- sc/GUIElement
    ancestors :- [sc/GUIElement]]
@@ -119,7 +119,7 @@
     ; Tests on a (java) repl showed no stackoverflow until the tree reached
     ; a level of 1000-1500 nested elements. I'm not sure about clojurescript's
     ; stack but it shouldn't be worse... I hope.
-    (render x (conj ancestors element))))
+    (render-gui x (conj ancestors element))))
 
 (s/defn find-element-path
   "Recursively look for a specific ID of a GUI element in a GUI tree.
@@ -156,11 +156,11 @@
                  (rest remaining)
                  (conj (conj path :children) (first result))))))))
 
-(s/defn render-gui
+(s/defn render
   "Recursively calls into the registered elements render functions and displays
   them on the screen."
   [{GUI :GUI} :- sc/Screen]
-  (render GUI '()))
+  (render-gui GUI '()))
 
 (s/defn replace-element
   "Find an element in the GUI tree and replace it with the new one."
