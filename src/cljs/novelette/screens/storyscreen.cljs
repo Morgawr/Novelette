@@ -83,20 +83,17 @@
       (r/draw-text context nametag-position nametag "bold 29px" (name namecolor))))
     (.restore context))
 
-(s/defn render-choice
-  [{:keys [state storyteller context] :as screen} :- sc/Screen]
-  (.save context)
-  (set! (.-shadowColor context) "black")
-  (set! (.-shadowOffsetX context) 1.5)
-  (set! (.-shadowOffsetY context) 1.5)
-  (let [{{name :choice-text
-          options :option-names} :state} storyteller
-        pos-w (int (/ (r/measure-text-length context name) 2))]
-    (r/draw-image context [415 180] :choicebg)
-    (r/draw-text-centered context [680 220] name "25px" "white")
-    (doseq [[s i] (zipmap options (range (count options)))]
-      (r/draw-text context [(- 620 pos-w) (+ 285 (* i 45))] s "20px" "white")))
-  (.restore context))
+; TODO - Commented out this code as a reminder, but it needs to go.
+;(s/defn render-choice
+;  [{:keys [state storyteller context] :as screen} :- sc/Screen]
+;  (.save context)
+;  (set! (.-shadowColor context) "black")
+;  (set! (.-shadowOffsetX context) 1.5)
+;  (set! (.-shadowOffsetY context) 1.5)
+;  (let [{{name :choice-text
+;          options :option-names} :state} storyteller
+;        pos-w (int (/ (r/measure-text-length context name) 2))]
+;  (.restore context)))
 
 (s/defn render ; TODO - move this to GUI
   [{:keys [state context] :as screen} :- sc/Screen
@@ -115,9 +112,7 @@
         (r/draw-sprite context (:ui-img state)))
       (when (get-in screen [:storyteller :state :display-message])
         (render-dialogue screen))
-      (when (get-in screen [:storyteller :state :choice-text])
-        (render-choice screen))))
-  screen) ; TODO This might just return nothing? render in any case shouldn't be stateful
+  screen))) ; TODO This might just return nothing? render in any case shouldn't be stateful
 
 (s/defn handle-input
   [screen :- sc/Screen

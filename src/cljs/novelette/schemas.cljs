@@ -5,6 +5,9 @@
 ; This file contains all the schemas used by the Novelette VN engine so it can
 ; be easily referred from any namespace without dependency problems.
 
+; TODO - Write a more comprehensive documentation on the data structures and
+; their differences, composition and which data they can contain.
+
 (s/defschema function (s/pred fn? 'fn?))
 
 ; A position is either a pair of coordinates x/y or a tuple of four values x/y/w/h
