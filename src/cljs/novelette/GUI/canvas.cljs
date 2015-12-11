@@ -9,7 +9,8 @@
      canvas :entity
      base-color :base-color} :content} :- sc/GUIElement
    ancestors :- [sc/GUIElement]]
-  (novelette.render/fill-clear canvas ctx base-color )
+  ; TODO - Fix the canvas rendering, should we have the canvas rendered at all?
+  ;(novelette.render/fill-clear canvas ctx base-color )
   nil)
 
 (s/defn create

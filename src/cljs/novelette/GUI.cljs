@@ -159,8 +159,10 @@
 (s/defn render
   "Recursively calls into the registered elements render functions and displays
   them on the screen."
-  [{GUI :GUI} :- sc/Screen]
-  (render-gui GUI '()))
+  [{:keys [GUI state]} :- sc/Screen]
+  (when (:show-ui? state)
+    (render-gui GUI '()))) ; TODO - Pass the whole screen to the rendering functions
+                           ; because we might want to handle transitions in the rendering.
 
 (s/defn replace-element
   "Find an element in the GUI tree and replace it with the new one."

@@ -3,6 +3,7 @@
   (:require [novelette.render :as r]
             [novelette.GUI :as GUI]
             [novelette.GUI.canvas]
+            [novelette.GUI.panel]
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
             [novelette.storyteller :as st]
@@ -102,14 +103,12 @@
         sps (if (seq (:spriteset state))
               (utils/sort-z-index ((apply juxt (:spriteset state))
                                    (:sprites state))) [])]
-    (GUI/render screen)
     (doseq [s bgs]
       (r/draw-image context [0 0] s))
     (when on-top
       (doseq [s sps]
         (r/draw-sprite context s))
-      (when (:show-ui? state)
-        (r/draw-sprite context (:ui-img state)))
+      (GUI/render screen)
       (when (get-in screen [:storyteller :state :display-message])
         (render-dialogue screen))
   screen))) ; TODO This might just return nothing? render in any case shouldn't be stateful
@@ -122,21 +121,31 @@
     on-top (#(GUI/handle-input
                (assoc-in % [:state :input-state] input)))))
 
+(s/defn init-dialogue-panel
+  [screen :- sc/Screen]
+  (GUI/add-element (novelette.GUI.panel/create (:context screen)
+                                               :dialogue-panel
+                                               [30 500 1240 200] 10 ; TODO - Remove this hardcoded stuff and make it more general-purpose
+                                               {:bg-color "#304090"})
+                   :canvas screen))
+
 (s/defn init
   [ctx :- js/CanvasRenderingContext2D
    canvas :- js/HTMLCanvasElement
    gamestate :- sc/StoryState]
-  (into gscreen/BASE-SCREEN
-        {
-         :id "StoryScreen"
-         :update screen-update
-         :render render
-         :handle-input handle-input
-         :context ctx
-         :canvas canvas
-         :deinit (fn [s] nil)
-         :state gamestate
-         :storyteller (sc/StoryTeller. @st/RT-HOOKS {:type :dummy} 0 {} false)
-         :GUI (novelette.GUI.canvas/create canvas ctx "black")}))
+  (let [screen (into gscreen/BASE-SCREEN
+                     {
+                      :id "StoryScreen"
+                      :update screen-update
+                      :render render
+                      :handle-input handle-input
+                      :context ctx
+                      :canvas canvas
+                      :deinit (fn [s] nil)
+                      :state gamestate
+                      :storyteller (sc/StoryTeller. @st/RT-HOOKS
+                                                    {:type :dummy} 0 {} false)
+                      :GUI (novelette.GUI.canvas/create canvas ctx "black")})]
+    (init-dialogue-panel screen)))
 ; TODO - Find a way to properly pass user-provided init data to the canvas
 ; and other possible GUI elements. In this case it's the 'black' color.
