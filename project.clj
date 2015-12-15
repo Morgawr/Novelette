@@ -13,7 +13,7 @@
    :builds
    [
     {:id "novelette"
-     :source-paths ["src/cljs"]
+     :source-paths ["src/"]
      :compiler
      {:optimizations :whitespace
       :output-dir "runtime/js"
@@ -21,7 +21,7 @@
       :pretty-print true
       :source-map "runtime/js/novelette.js.map"}}
     {:id "tests"
-     :source-paths ["src/cljs" "tests"]
+     :source-paths ["src/" "tests"]
      :compiler {:output-to "compiled-tests/tests.js"
                 :optimizations :whitespace
                 :main "novelette.tests.runner"
