@@ -132,7 +132,7 @@
 
 (defmacro declare-sprite
   "Declares a sprite bound to the current screen"
-  [id image-id position z-index]
+  [id sprite-model position z-index]
   `{:type :function
     :hook :decl-sprite
     :params [~id ~sprite-model ~position ~z-index]})
