@@ -135,7 +135,7 @@
   [id image-id position z-index]
   `{:type :function
     :hook :decl-sprite
-    :params [~id ~image-id ~position ~z-index]})
+    :params [~id ~sprite-model ~position ~z-index]})
 
 (defmacro clear-backgrounds
   "Empties the background stack"

@@ -1,6 +1,7 @@
 (ns novelette.schemas
   (:require-macros [schema.core :as s])
-  (:require [schema.core :as s]))
+  (:require [schema.core :as s]
+            [novelette-sprite.schemas :as scs]))
 
 ; This file contains all the schemas used by the Novelette VN engine so it can
 ; be easily referred from any namespace without dependency problems.
@@ -9,15 +10,6 @@
 ; their differences, composition and which data they can contain.
 
 (s/defschema function (s/pred fn? 'fn?))
-
-; A position is either a pair of coordinates x/y or a tuple of four values x/y/w/h
-; packed into a vector.
-(s/defschema pos (s/conditional
-                   #(= (count %) 2) [(s/one s/Int :x) (s/one s/Int :y)]
-                   #(= (count %) 4) [(s/one s/Int :x)
-                                     (s/one s/Int :y)
-                                     (s/one s/Int :width)
-                                     (s/one s/Int :height)]))
 
 ; The id of an element can either be a string or a keyword (prefer using keywords).
 (s/defschema id (s/cond-pre s/Str s/Keyword))
@@ -54,7 +46,7 @@
 ; A GUIElement is the basic datatype used to handle GUI operations.
 (s/defrecord GUIElement [type :- s/Keyword; The element type.
                          id :- id ; Name/id of the GUI element
-                         position :- pos ; Coordinates of the element [x y w h]
+                         position :- scs/pos ; Coordinates of the element [x y w h]
                          content :- {s/Keyword s/Any} ; Local state of the element (i.e.: checkbox checked? radio selected? etc)
                          children :- [s/Any] ; Vector of children GUIElements. TODO - maybe turn this into a map
                          events :- {GUIEvent function} ; Map of events.
@@ -64,15 +56,6 @@
                          render :- function ; Render function called on the element.
                          ])
 
-; A sprite is different from an image, an image is a texture loaded into the
-; engine's renderer with an id assigned as a reference. A sprite is an instance
-; of a texture paired with appropriate positioning and rendering data.
-(s/defrecord Sprite [id :- id ; image id loaded in the engine
-                     position :- pos ; X/Y coordinates in a vector
-                     z-index :- s/Int ; depth ordering for rendering, lower = front
-                     ; TODO - add scale and rotation
-                     ])
-
 ; TODO - Move on-top and elapsed-time into the screen structure
 ; This is the storytelling state of the game. It is an object containing the whole set of
 ; past, present and near-future state. It keeps track of stateful actions like scrollback,
@@ -81,13 +64,13 @@
 (s/defrecord StoryState [scrollback :- [s/Any] ; Complete history of events for scrollback purposes, as a stack (this should contain the previous state of the storyscreen too)
                          scrollfront :- [{s/Any s/Any}] ; Stack of events yet to be interpreted.
                          spriteset :- #{s/Keyword} ; Set of sprite id currently displayed on screen.
-                         sprites :- {s/Keyword Sprite} ; Map of sprites globally defined on screen.
-                         backgrounds :- [Sprite] ; Stack of sprites currently in use as backgrounds.
+                         sprites :- {s/Keyword scs/Sprite} ; Map of sprites globally defined on screen.
+                         backgrounds :- [scs/Sprite] ; Stack of sprites currently in use as backgrounds.
                          points :- {s/Keyword s/Int} ; Map of points that the player obtained during the game
                          cps :- s/Int ; characters per second
                          next-step? :- s/Bool ; Whether or not to advance to next step for storytelling
                          show-ui? :- s/Bool ; Whether or not we show the game UI on screen.
-                         ui-img :- Sprite; UI image to show
+                         ui-img :- scs/Sprite; UI image to show TODO: Maybe integrate sprite in UI?
                          input-state :- {s/Keyword s/Any} ; State of the input for the current frame.
                          cursor :- s/Keyword ; Image of glyph used to advance text
                          cursor-delta :- s/Num ; Delta to make the cursor float, just calculate % 4

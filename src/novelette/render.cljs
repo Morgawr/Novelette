@@ -3,6 +3,8 @@
   (:require [goog.dom :as dom]
             [clojure.string]
             [novelette.schemas :as sc]
+            [novelette-sprite.schemas :as scs]
+            [novelette-sprite.render]
             [schema.core :as s]
             [novelette.utils :as u]))
 
@@ -24,27 +26,10 @@
 ; TODO - Add support for multiple fonts
 (def FONT "sans-serif")
 
-(declare load-image)
-
-(s/defn load-error
-  [uri :- s/Str
-   sym :- sc/id]
-  (let [window (dom/getWindow)]
-    (.setTimeout window #(load-image uri sym) 200)))
-
-(s/defn load-image
-  "Load the given image under the given keyword in the engine's buffer."
-  [uri :- s/Str
-   sym :- sc/id]
-  (let [image (js/Image. )]
-    (set! (.-onload image) #(swap! IMAGE-MAP assoc sym image))
-    (set! (.-onerror image) #(load-error uri sym))
-    (set! (.-src image) uri)))
-
 (s/defn draw-image
   "Draw the image on the canvas given the coordinates and the id of the image."
   [ctx :- js/CanvasRenderingContext2D
-   pos :- sc/pos
+   pos :- scs/pos
    name :- sc/id]
   (let [image (name @IMAGE-MAP)]
     (.drawImage ctx image
@@ -53,9 +38,9 @@
 
 (s/defn draw-sprite
   "Draw a given sprite on the canvas."
-  [ctx :- js/CanvasRenderingContext2D
-   {:keys [id position]} :- sc/Sprite]
-  (draw-image ctx position id))
+  [ctx :- js/CanvasRenderingContext2D ; XXX - Temporary wrapper to Novelette-sprite
+   sprite :- scs/Sprite]
+  (novelette-sprite.render/draw-sprite ctx sprite @IMAGE-MAP))
 
 (s/defn fill-clear
   "Fill the whole canvas with a given color."
@@ -71,14 +56,14 @@
   "Draw a rectangle shape on the canvas at the given coordinates."
   [ctx :- js/CanvasRenderingContext2D
    color :- s/Str
-   pos :- sc/pos]
+   pos :- scs/pos]
   (set! (.-fillStyle ctx) color)
   (.fillRect ctx (pos 0) (pos 1) (pos 2) (pos 3)))
 
 (s/defn draw-text
   "Draw a string of text on the canvas with the given properties."
   [ctx :- js/CanvasRenderingContext2D
-   pos :- sc/pos
+   pos :- scs/pos
    text :- s/Str
    attr ; TODO - Figure out the data type of this
    color :- s/Str]
@@ -100,7 +85,7 @@
 (s/defn draw-text-with-cursor
   "Draw a string with the given cursor image appended at the end."
   [ctx :- js/CanvasRenderingContext2D
-   pos :- sc/pos
+   pos :- scs/pos
    text :- s/Str
    attr ; TODO - Figure out the data type of this
    color :- s/Str
@@ -117,7 +102,7 @@
 (s/defn draw-text-centered
   "Draw a string centered at the given origin."
   [ctx :- js/CanvasRenderingContext2D
-   pos :- sc/pos
+   pos :- scs/pos
    text :- s/Str
    attr ; TODO - Figure out the data type of this
    color :- s/Str]
@@ -145,7 +130,7 @@
 (s/defn draw-multiline-center-text
   "Draw a multiline string centered at the given origin."
   [ctx :- js/CanvasRenderingContext2D
-   pos :- sc/pos
+   pos :- scs/pos
    msg :- s/Str
    attr ; TODO - Figure out the data type of this
    color :- s/Str

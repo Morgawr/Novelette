@@ -1,6 +1,7 @@
 (ns novelette.GUI
   (:require-macros [schema.core :as s])
   (:require [novelette.schemas :as sc]
+            [novelette-sprite.schemas :as scs]
             [schema.core :as s]
             [novelette.input]
             [novelette.utils :as utils]))
@@ -30,7 +31,7 @@
   "Calculate the absolute position given a list of ancestors and the currently
   relative position within the parent element."
   [ancestors :- [sc/GUIElement]
-   position :- sc/pos]
+   position :- scs/pos]
    (vec (reduce #(update (update %1 0 + ((:position %2) 0))
                          1 + ((:position %2) 1)) position ancestors)))
 

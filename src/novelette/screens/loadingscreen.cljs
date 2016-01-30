@@ -1,6 +1,7 @@
 (ns novelette.screens.loadingscreen
   (:require-macros [schema.core :as s])
   (:require [novelette.render :as r]
+            [novelette-sprite.loader]
             [novelette.screen :as gscreen]
             [novelette.schemas :as sc]
             [novelette.sound :as gsound]
@@ -43,7 +44,7 @@
     (handle-input screen input)
     screen))
 
-(s/defn load-main-menu
+(s/defn load-main-menu ; XXX - Misleading function name!
   [screen :- sc/Screen]
   (let [ctx (:context screen)
         canvas (:canvas screen)]
@@ -57,7 +58,7 @@
 (s/defn percentage-loaded
   [imgcount :- s/Int
    sndcount :- s/Int]
-  (let [max (+ (count @r/IMAGE-MAP)
+  (let [max (+ (count @r/IMAGE-MAP) ; TODO - With novelette-sprite this is broken
                (count @gsound/SOUND-MAP))
         ptg (* (/ max (+ imgcount sndcount)) 100)]
     (int ptg)))
@@ -78,7 +79,7 @@
 (s/defn all-loaded?
   [imgcount :- s/Int
    sndcount :- s/Int]
-  (and (has-loaded? imgcount @r/IMAGE-MAP)
+  (and (novelette-sprite.loader/loading-complete?)
        (has-loaded? sndcount @gsound/SOUND-MAP)))
 
 (s/defn load-sounds
@@ -97,8 +98,10 @@
      (:complete screen)
        screen
      (and (zero? (:loading-status screen))
-          (has-loaded? images @r/IMAGE-MAP))
-       (load-sounds screen)
+          (novelette-sprite.loader/loading-complete?))
+      (do
+        (reset! r/IMAGE-MAP (novelette-sprite.loader/get-images!)) ; XXX - This is very ugly, it should be streamlined
+        (load-sounds screen))
      (all-loaded? images sounds)
        (everything-loaded screen)
      :else
@@ -115,10 +118,10 @@
 (s/defn init
   [ctx :- js/CanvasRenderingContext2D
    canvas :- js/HTMLCanvasElement
-   images :- {s/Any s/Any}
+   images :- {sc/id s/Str}
    audios :- {s/Any s/Any}
    to-load :- sc/Screen]
-  (doseq [[k v] images] (r/load-image v k))
+  (novelette-sprite.loader/load-images! images)
   (-> gscreen/BASE-SCREEN
       (into {
              :id "LoadingScreen"
@@ -136,5 +139,5 @@
              :loading-status 0 ; 0 = image, 1 = sound
              :audio-list (generate-audio-list audios)
              :image-list images
-             :to-load to-load ;(novelette.screens.storyscreen/init ctx canvas start-game)
+             :to-load to-load
              })))

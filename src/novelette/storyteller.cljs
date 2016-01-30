@@ -6,6 +6,8 @@
   (:require [novelette.sound :as snd]
             [clojure.string]
             [novelette.schemas :as sc]
+            [novelette-sprite.schemas :as scs]
+            novelette-sprite.loader
             [novelette.GUI :as GUI]
             [novelette.GUI.panel]
             [novelette.GUI.label]
@@ -235,7 +237,7 @@
 (s/defn teleport-sprite
   [screen :- sc/Screen
    id :- sc/id
-   position :- sc/pos]
+   position :- scs/pos]
   (-> screen
       (assoc-in [:state :sprites id :position] position)
       (advance-step)))
@@ -243,13 +245,12 @@
 (s/defn decl-sprite
   [screen :- sc/Screen
    id :- sc/id
-   img :- sc/id
-   pos :- sc/pos
+   model :- scs/SpriteModel
+   pos :- scs/pos
    z-index :- s/Int]
   (-> screen
-      (assoc-in [:state :sprites id] {:id img
-                                      :position pos
-                                      :z-index z-index})
+      (assoc-in [:state :sprites id] (novelette-sprite.loader/create-sprite
+                                       model pos z-index))
       (advance-step)))
 
 (s/defn pop-background
@@ -286,7 +287,7 @@
 (s/defn set-ui
   [screen :- sc/Screen
    id :- sc/id
-   pos :- sc/pos]
+   pos :- scs/pos]
   (-> screen
       (update-in [:state :ui-img] merge {:id id :position pos})
       (advance-step)))
@@ -324,7 +325,7 @@
 
 (s/defn set-nametag-position
   [screen :- sc/Screen
-   pos :- sc/pos]
+   pos :- scs/pos]
   (-> screen
       (assoc-in [:state :nametag-position] pos)
       (advance-step)))

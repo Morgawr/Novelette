@@ -1,6 +1,7 @@
 (ns novelette.GUI.button
   (:require-macros [schema.core :as s])
   (:require [novelette.schemas :as sc]
+            [novelette-sprite.schemas :as scs]
             [schema.core :as s]
             [novelette.render]
             [novelette.utils :as u]
@@ -27,7 +28,7 @@
   [ctx :- js/CanvasRenderingContext2D
    id :- sc/id
    text :- s/Str
-   position :- sc/pos
+   position :- scs/pos
    z-index :- s/Int
    extra :- {s/Any s/Any}]
   (let [content (merge {:context ctx

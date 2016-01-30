@@ -8,14 +8,21 @@
             [novelette.sound :as gsound]
             [novelette.storyteller :as st]
             [novelette.schemas :as sc]
+            [novelette-sprite.schemas :as scs]
+            [novelette-sprite.loader]
             [novelette.utils :as utils]
             [clojure.string :as string]
             [schema.core :as s]))
 
+(def dialogue-ui-model (novelette-sprite.loader/create-model
+                         :dialogue-ui [(scs/Keyframe. [0 0 1280 300] 0)]))
+
 ; TODO - Maybe remove the base state? It's only used in the init.
 (def BASE-STATE (sc/StoryState. '() '() #{} {} '() {} 0 true false
-                                (sc/Sprite. :dialogue-ui [0 0] 0) {} :cursor 0
+                                (novelette-sprite.loader/create-sprite
+                                  dialogue-ui-model [0 0] 0) {} :cursor 0
                                 [0 0 0 0] [0 0]))
+
 
 (s/defn update-cursor ; TODO - move this into the GUI
   [{:keys [state] :as screen} :- sc/Screen
