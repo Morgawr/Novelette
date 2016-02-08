@@ -7,7 +7,13 @@ the browser and node-webkit.
 
 ## Usage
 
-TBA
+The project is still heavily in development and is not yet ready for release.
+
+There is a [planned roadmap/feature track list](https://docs.google.com/document/d/1YNBiB1H9DMh2VBY9-hdHCaoOaOZXpdn_k2SEazDmqLY) on Google docs where I keep track
+of what needs to be done and the development of new features.
+
+Alternatively, a quick grep for "TODO" string on the source code will show what
+minor or structural/refactoring issues need to be worked on.
 
 ## License
 

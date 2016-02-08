@@ -10,6 +10,7 @@
             [novelette.schemas :as sc]
             [novelette-sprite.schemas :as scs]
             [novelette-sprite.loader]
+            [novelette-sprite.render]
             [novelette.utils :as utils]
             [clojure.string :as string]
             [schema.core :as s]))
@@ -39,6 +40,14 @@
    elapsed-time :- s/Int]
   (update-cursor screen elapsed-time)) ; TODO - move this into the GUI
 
+(s/defn update-sprites
+  [screen :- sc/Screen
+   elapsed-time :- s/Int]
+  (update-in screen [:state :sprites]
+             #(into {} (for [[k s] %]
+                         [k (novelette-sprite.render/update-sprite
+                              s elapsed-time)]))))
+
 (s/defn screen-update
   [screen :- sc/Screen
    on-top :- s/Bool
@@ -46,6 +55,7 @@
   (cond-> screen
           on-top
           (-> (st/screen-update elapsed-time)
+              (update-sprites elapsed-time)
               (update-gui elapsed-time))))
 
 (s/defn render-dialogue
@@ -111,7 +121,7 @@
               (utils/sort-z-index ((apply juxt (:spriteset state))
                                    (:sprites state))) [])]
     (doseq [s bgs]
-      (r/draw-image context [0 0] s))
+      (r/draw-image context [0 0] s)) ; TODO - Merge backgrounds into the sprite system
     (when on-top
       (doseq [s sps]
         (r/draw-sprite context s))

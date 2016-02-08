@@ -8,6 +8,7 @@
             [novelette.schemas :as sc]
             [novelette-sprite.schemas :as scs]
             novelette-sprite.loader
+            novelette-sprite.render
             [novelette.GUI :as GUI]
             [novelette.GUI.panel]
             [novelette.GUI.label]
@@ -218,6 +219,7 @@
    id :- sc/id]
   (-> screen
       (update-in [:state :spriteset] conj id)
+      (update-in [:state :sprites id] novelette-sprite.render/start-sprite)
       (advance-step)))
 
 (s/defn remove-sprite
@@ -225,6 +227,7 @@
    id :- sc/id]
   (-> screen
       (update-in [:state :spriteset] disj id)
+      (update-in [:state :sprites id] novelette-sprite.render/stop-sprite)
       (advance-step)))
 
 (s/defn clear-sprites
@@ -251,6 +254,7 @@
   (-> screen
       (assoc-in [:state :sprites id] (novelette-sprite.loader/create-sprite
                                        model pos z-index))
+      (update-in [:state :sprites id] novelette-sprite.render/pause-sprite)
       (advance-step)))
 
 (s/defn pop-background
