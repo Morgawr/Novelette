@@ -4,7 +4,7 @@
                  [org.clojure/clojurescript "1.7.170"]
                  [prismatic/schema "1.0.1"]
                  [lein-doo "0.1.6"]
-                 [novelette-text "0.1.0"]
+                 [novelette-text "0.1.2-SNAPSHOT"]
                  [novelette-sprite "0.1.0.1"]]
   :plugins [[lein-cljsbuild "1.1.1"]
             [lein-doo "0.1.6"]]
