@@ -72,7 +72,7 @@
           namecolor :color} :current-token} storyteller] ; TODO refactor this
     (when (seq nametag)
       (text/draw-text nametag nametag-position 200 (assoc name-class :color (name namecolor)) text-renderer))
-    (text/draw-text dialogue [x y] w font-class  text-renderer)))
+    (text/draw-text dialogue [x y] w font-class text-renderer)))
 
   ; TODO - The following is junk code that needs to be removed as soon as we get feature parity with the old code (i.e - cursor)
   ;(let [{:keys [cursor cursor-delta

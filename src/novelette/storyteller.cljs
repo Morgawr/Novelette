@@ -46,6 +46,50 @@
         (init-new)) yield?])
   ([screen :- sc/Screen] (advance-step screen false)))
 
+; TODO - Probably extract these message utilities into their own module for
+; simpler re-use (easier with memoization too!)
+(s/defn interpolate-message
+  "Take the message string and split it into multiple <style></style> groups."
+  [msg :- s/Str]
+  (let [regex-match (re-pattern "<[/]?style[=]?[^>]*>")
+        matches (clojure.string/split msg regex-match)
+        seqs (re-seq regex-match msg)]
+    {:msg-list matches
+     :sequences seqs}))
+
+; TODO - I am adding unnecessary " " in-between the style tags because of a bug
+; with the novelette-text library -> Novelette-text/issues/1
+(s/defn extract-message
+  "Given a message sequence and a character count, retrieve a well-formatted
+  message."
+  [{:keys [msg-list sequences]} :- s/Any ; TODO - Do we want proper typing here?
+   char-count :- s/Int]
+  (cond
+    (>= char-count (count (apply str msg-list)))
+    (str (apply str (map str msg-list sequences))   ; Merge together the whole message + styles
+         (if (> (count msg-list) (count sequences)) ; add closing tags if any :)
+           (apply str (drop (count sequences) msg-list))
+           (str " " (clojure.string/join " " (drop (count msg-list) sequences)))))
+    :else
+    (loop [taken 0 msg "" msg-list msg-list sequences sequences]
+      (let [next-msg (first msg-list)]
+        (cond
+          (or (>= taken char-count)
+              (not (seq next-msg)))
+          (str msg " " (clojure.string/join " " sequences))
+          (> (+ taken (count next-msg)) char-count)
+          (str msg (apply str (take (- char-count taken) next-msg))
+               (clojure.string/join " " sequences))
+          :else
+          (let [msg (apply str msg next-msg (first sequences))
+                taken (+ taken (count next-msg))]
+            (recur taken msg (rest msg-list) (rest sequences))) )))))
+
+; This is for optimization purposes, memory usage might raise unnecessarily
+; so it might be nice to have a "purge" command to free memoization resources.
+; TODO - implement a "purge" command inbetween screen transitions
+(def memo-interpolate-message (atom (memoize interpolate-message)))
+(def memo-extract-message (atom (memoize extract-message)))
 (s/defn update-dialogue
   [{:keys [state storyteller] :as screen} :- sc/Screen]
   (let [{{current-token :current-token timer :timer
@@ -61,11 +105,14 @@
           (if clicked?
             (advance-step next true)
             [next true]))
-      (or clicked? (> char-count (count message)))
+      (or clicked?
+          (> char-count ((comp count str :msg-list)
+                         (@memo-interpolate-message message))))
         [(update-in screen [:storyteller :state] merge {:display-message message :end? true}) true]
       :else ; Update display-message according to cps
-        [(assoc-in screen [:storyteller :state :display-message]
-                   (clojure.string/join (take char-count message))) true])))
+       (let [msg (@memo-extract-message
+                   (@memo-interpolate-message message) char-count)]
+        [(assoc-in screen [:storyteller :state :display-message] msg) true]))))
 
 (s/defn create-multiple-choice-panel
   [id :- sc/id
