@@ -82,23 +82,6 @@
    text :- s/Str]
   (.-width (.measureText ctx text)))
 
-(s/defn draw-text-with-cursor
-  "Draw a string with the given cursor image appended at the end."
-  [ctx :- js/CanvasRenderingContext2D
-   pos :- scs/pos
-   text :- s/Str
-   attr ; TODO - Figure out the data type of this
-   color :- s/Str
-   cursor-id :- sc/id
-   cursor-y-offset :- s/Int]
-  (.save ctx)
-  (set! (.-font ctx) (str attr " " FONT))
-  (draw-text ctx pos text attr color)
-  (let [width (measure-text-length ctx text)
-        [x y] pos]
-    (draw-image ctx [(+ x width 2) (+ y 14 cursor-y-offset)] cursor-id))
-  (.restore ctx))
-
 (s/defn draw-text-centered
   "Draw a string centered at the given origin."
   [ctx :- js/CanvasRenderingContext2D

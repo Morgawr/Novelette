@@ -59,7 +59,6 @@
               (update-sprites elapsed-time)
               (update-gui elapsed-time))))
 
-; TODO - handle the cursor blinking with novelette-text library
 (s/defn render-dialogue
   [{:keys [state storyteller context] :as screen} :- sc/Screen]
   (let [{:keys [dialogue-bounds nametag-position]} state
@@ -72,49 +71,20 @@
           namecolor :color} :current-token} storyteller] ; TODO refactor this
     (when (seq nametag)
       (text/draw-text nametag nametag-position 200 (assoc name-class :color (name namecolor)) text-renderer))
-    (text/draw-text dialogue [x y] w font-class text-renderer)))
-
-  ; TODO - The following is junk code that needs to be removed as soon as we get feature parity with the old code (i.e - cursor)
-  ;(let [{:keys [cursor cursor-delta
-  ;              dialogue-bounds nametag-position]} state
-  ;      [x y w h] dialogue-bounds
-  ;      step (+ 30 (int (/ w (r/measure-text-length context "m"))))
-  ;      words (string/split (get-in storyteller [:state :display-message] storyteller) #"\s")
-  ;      {{nametag :name
-  ;        namecolor :color} :current-token} storyteller ; TODO refactor this
-  ;      lines (cond-> words
-  ;                    (> (count words) 1)
-  ;                    ((fn [curr ws acc]
-  ;                       (cond
-  ;                        (empty? curr)
-  ;                          (reverse (conj ws (string/join " " acc)))
-  ;                        (< step (count (string/join " " (conj acc (first curr)))))
-  ;                          (recur curr (conj ws (string/join " " acc)) [] )
-  ;                        :else
-  ;                          (recur (rest curr) ws (conj acc (first curr))))) '() []))
-  ;      iterators (zipmap (drop-last lines) (range (count (drop-last lines))))
-  ;      offset (cond (< 0 cursor-delta 101) -2 ; TODO - this is terrible I hate myself.
-  ;                   (or (< 100 cursor-delta 201)
-  ;                       (< 700 cursor-delta 801)) -1
-  ;                   (or (< 200 cursor-delta 301)
-  ;                       (< 600 cursor-delta 701)) 0
-  ;                   (or (< 300 cursor-delta 401)
-  ;                       (< 500 cursor-delta 601)) 1
-  ;                   (< 400 cursor-delta 501) 2
-  ;                   :else 0)]
-  ;  (.save context) ; TODO - move this into the UI
-  ;  (set! (.-shadowColor context) "black")
-  ;  (set! (.-shadowOffsetX context) 1.5)
-  ;  (set! (.-shadowOffsetY context) 1.5)
-  ;  (doseq [[s i] iterators]
-  ;    (r/draw-text context [x (+ y (* i 35))] s "25px" "white"))
-  ;  (when-not (nil? (last lines))
-  ;    (r/draw-text-with-cursor context [x (+ y (* (dec (count lines)) 35))]
-  ;                             (last lines)
-  ;                             "25px" "white" cursor offset))
-  ;  (when (seq nametag)
-  ;    (r/draw-text context nametag-position nametag "bold 29px" (name namecolor))))
-  ;  (.restore context))
+    (let [returned-pos (text/draw-text dialogue [x y] w font-class text-renderer)
+          cursor-delta (:cursor-delta state)
+          offset (cond (< 0 cursor-delta 101) -2 ; TODO - this is terrible I hate myself.
+                       (or (< 100 cursor-delta 201)
+                           (< 700 cursor-delta 801)) -1
+                       (or (< 200 cursor-delta 301)
+                           (< 600 cursor-delta 701)) 0
+                       (or (< 300 cursor-delta 401)
+                           (< 500 cursor-delta 601)) 1
+                       (< 400 cursor-delta 501) 2
+                       :else 0)
+          cursor-pos [(+ (first returned-pos) 2) ; TODO - maybe fix these hardcoded parameters (the x value offset)
+                      (+ offset (second returned-pos) -3)]]
+      (r/draw-image context cursor-pos (:cursor state)))))
 
 ; TODO - Commented out this code as a reminder, but it needs to go.
 ;(s/defn render-choice
