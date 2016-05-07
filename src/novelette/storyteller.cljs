@@ -67,7 +67,8 @@
     (str (apply str (map str msg-list sequences))   ; Merge together the whole message + styles
          (if (> (count msg-list) (count sequences)) ; add closing tags if any :)
            (apply str (drop (count sequences) msg-list))
-           (str " " (clojure.string/join " " (drop (count msg-list) sequences)))))
+           (str " " (clojure.string/join
+                      " " (drop (count msg-list) sequences)))))
     :else
     (loop [taken 0 msg "" msg-list msg-list sequences sequences]
       (let [next-msg (first msg-list)]
@@ -99,14 +100,16 @@
         clicked? (get-in input-state [:clicked? 0])]
      (cond
       end?
-        (let [next (assoc-in screen [:storyteller :state :display-message] message)]
+        (let [next (assoc-in screen
+                             [:storyteller :state :display-message] message)]
           (if clicked?
             (advance-step next true)
             [next true]))
       (or clicked?
           (> char-count ((comp count str :msg-list)
                          (@memo-interpolate-message message))))
-        [(update-in screen [:storyteller :state] merge {:display-message message :end? true}) true]
+        [(update-in screen [:storyteller :state]
+                    merge {:display-message message :end? true}) true]
       :else ; Update display-message according to cps
        (let [msg (@memo-extract-message
                    (@memo-interpolate-message message) char-count)]
@@ -119,7 +122,8 @@
     (->
       (update-in [:storyteller :state]
                  merge {:choice-text (get-in storyteller [:current-token :text])
-                        :option-names (keys (get-in storyteller [:current-token :options]))})
+                        :option-names
+                        (keys (get-in storyteller [:current-token :options]))})
       (ui/spawn-explicit-choice-gui))))
 
 ; 1 - Storyteller must create GUI elements for multiple choice
@@ -166,14 +170,15 @@
          (.log js/console "Dummy step")
          (advance-step screen))
      :else
-       (do
-         (.log js/console "Storyteller: ")
-         (.log js/console (pr-str (:storyteller screen))
-         (.log js/console "State: ")
-         (.log js/console (pr-str (:state screen))
-         (.log js/console "Screen: ")
-         (.log js/console (pr-str (dissoc screen :state :storyteller)))
-         (throw (js/Error. (str "Error: unknown type -> " (pr-str (:type step)))))))))))
+      (do
+        (.log js/console "Storyteller: ")
+        (.log js/console (pr-str (:storyteller screen)))
+        (.log js/console "State: ")
+        (.log js/console (pr-str (:state screen)))
+        (.log js/console "Screen: ")
+        (.log js/console (pr-str (dissoc screen :state :storyteller)))
+        (throw
+          (js/Error. (str "Error: unknown type -> " (pr-str (:type step)))))))))
 
 (s/defn screen-update
   [{:keys [storyteller] :as screen} :- sc/Screen
