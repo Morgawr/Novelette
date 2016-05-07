@@ -10,9 +10,7 @@
             novelette-sprite.loader
             novelette-sprite.render
             [novelette.GUI :as GUI]
-            [novelette.GUI.panel]
-            [novelette.GUI.label]
-            [novelette.GUI.button]
+            [novelette.GUI.story-ui :as ui]
             [schema.core :as s]))
 
 ; storyteller just takes a stack of instructions and executes them in order.
@@ -114,77 +112,6 @@
                    (@memo-interpolate-message message) char-count)]
         [(assoc-in screen [:storyteller :state :display-message] msg) true]))))
 
-(s/defn create-multiple-choice-panel
-  [id :- sc/id
-   ctx :- js/CanvasRenderingContext2D]
-  (novelette.GUI.panel/create ctx id [320 180 640 360]
-                              20 {:bg-color "#405599"}))
-
-; TODO - Maybe move this multiple-choice button class to its own widget container.
-(s/defn add-multiple-choice-buttons
-  [ids :- [sc/id]
-   {:keys [context] :as screen} :- sc/Screen]
-  (let [clicked-fn (fn [element screen]
-                     [(assoc-in screen [:storyteller :state :choice] (:id element))
-                      false])
-        on-hover-fn (fn [element screen]
-                      (let [on-hover-color-map (get-in element [:content :on-hover-color])]
-                        [(-> screen
-                             (#(GUI/assoc-element (:id element) % [:hover?] true))
-                             (#(GUI/update-element (:id element) % [:content] merge on-hover-color-map)))
-                         false]))
-        off-hover-fn (fn [element screen]
-                      (let [off-hover-color-map (get-in element [:content :off-hover-color])]
-                       [(-> screen
-                            (#(GUI/assoc-element (:id element) % [:hover?] false))
-                             (#(GUI/update-element (:id element) % [:content] merge off-hover-color-map)))
-                        false]))
-        gen-button-data (fn [id position]
-                          (-> (novelette.GUI.button/create
-                                context id id position 20
-                                {:bg-color "#222222" ; TODO - this is ugly, fix it
-                                 :fg-color "#772222"
-                                 :on-hover-color {:bg-color "#FFFFFF"
-                                                  :fg-color "#000000"}
-                                 :off-hover-color {:bg-color "#222222"
-                                                   :fg-color "#772222"}
-                                 :font-size 20})
-                              (GUI/add-event-listener :clicked clicked-fn)
-                              (GUI/add-event-listener :on-hover on-hover-fn)
-                              (GUI/add-event-listener :off-hover off-hover-fn)))
-        offset-y 60
-        starting-pos [160 80 310 50]]
-    (loop [screen screen counter 0 opts ids]
-      (if (seq opts)
-        (recur (GUI/add-element (gen-button-data (first opts)
-                                                 (update starting-pos 1 (partial + (* offset-y counter))))
-                                :choice-panel screen)
-               (inc counter)
-               (rest opts))
-        screen))))
-
-; TODO - This needs to be generalized for all types of interfaces and templates
-(s/defn spawn-explicit-choice-gui
-  [{:keys [storyteller state] :as screen} :- sc/Screen]
-  (let [{{:keys [choice-text option-names]} :state} storyteller]
-    (-> screen
-        (#(GUI/add-element (create-multiple-choice-panel
-                             :choice-panel (:context %)) :canvas %))
-        (#(GUI/add-element (novelette.GUI.panel/create (:context %)
-                                                       :choice-panel-title
-                                                       [0 0 640 60] 19
-                                                       {:bg-color "#607070"})
-                           :choice-panel %))
-        (#(GUI/add-element (novelette.GUI.label/create (:context %)
-                                                       :choice-label-title
-                                                       choice-text
-                                                       [0 0 640 60] 19
-                                                       {:fg-color "#000000"
-                                                        :transparent? true
-                                                        :font-size 30})
-                           :choice-panel-title %))
-        (#(add-multiple-choice-buttons option-names %)))))
-
 (s/defn init-explicit-choice
   [{:keys [storyteller state] :as screen} :- sc/Screen]
   (cond-> screen
@@ -193,7 +120,7 @@
       (update-in [:storyteller :state]
                  merge {:choice-text (get-in storyteller [:current-token :text])
                         :option-names (keys (get-in storyteller [:current-token :options]))})
-      (spawn-explicit-choice-gui))))
+      (ui/spawn-explicit-choice-gui))))
 
 ; 1 - Storyteller must create GUI elements for multiple choice
 ; 2 - Storyteller must not be aware of the GUI composition and/or interface details
@@ -213,7 +140,7 @@
             (advance-step true)))
       [screen true])))
 
-; XXX - change this into self-hosted parsing with :update, maybe.
+; TODO - change this into self-hosted parsing with :update, maybe.
 (s/defn parse-event
   [screen :- sc/Screen]
   (let [{{step :current-token} :storyteller} screen]

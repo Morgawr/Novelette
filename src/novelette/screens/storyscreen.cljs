@@ -3,7 +3,7 @@
   (:require [novelette.render :as r]
             [novelette.GUI :as GUI]
             [novelette.GUI.canvas]
-            [novelette.GUI.panel]
+            [novelette.GUI.story-ui :as ui]
             [novelette.screen :as gscreen]
             [novelette.sound :as gsound]
             [novelette.storyteller :as st]
@@ -123,14 +123,6 @@
     on-top (#(GUI/handle-input
                (assoc-in % [:state :input-state] input)))))
 
-(s/defn init-dialogue-panel
-  [screen :- sc/Screen]
-  (GUI/add-element (novelette.GUI.panel/create (:context screen)
-                                               :dialogue-panel
-                                               [30 500 1240 200] 10 ; TODO - Remove this hardcoded stuff and make it more general-purpose
-                                               {:bg-color "#304090"})
-                   :canvas screen))
-
 (defn init-text-engine ; TODO - Move this in a more reasonable place. Make it parameterized.
   []
   {:renderer (text/create-renderer "surface")
@@ -143,9 +135,6 @@
                                         :font-style "bold"
                                         :color "white"})})
 
-  ;  (set! (.-shadowColor context) "black")
-  ;  (set! (.-shadowOffsetX context) 1.5)
-  ;  (set! (.-shadowOffsetY context) 1.5)
 (s/defn init
   [ctx :- js/CanvasRenderingContext2D
    canvas :- js/HTMLCanvasElement
@@ -164,6 +153,6 @@
                                                     {:type :dummy} 0 {} false)
                       :text-renderer (init-text-engine)
                       :GUI (novelette.GUI.canvas/create canvas ctx "black")})]
-    (init-dialogue-panel screen)))
+    (ui/create-dialogue-panel screen)))
 ; TODO - Find a way to properly pass user-provided init data to the canvas
 ; and other possible GUI elements. In this case it's the 'black' color.
