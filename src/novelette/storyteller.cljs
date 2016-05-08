@@ -97,7 +97,7 @@
         message (first (:messages current-token))
         cpms (if (zero? cps) 0 (/ 1000 cps)) ; TODO fix this shit
         char-count (if (zero? cpms) 10000 (int (/ timer cpms)))
-        clicked? (get-in input-state [:clicked? 0])]
+        clicked? (get-in storyteller [:clicked? 0])]
      (cond
       end?
         (let [next (assoc-in screen
@@ -114,6 +114,11 @@
        (let [msg (@memo-extract-message
                    (@memo-interpolate-message message) char-count)]
         [(assoc-in screen [:storyteller :state :display-message] msg) true]))))
+
+(s/defn reset-clicked
+  "Reset the clicked? status in the storyteller for future events."
+  [[screen yield?] :- [(s/cond-pre sc/Screen s/Bool)]]
+  [(assoc-in screen [:storyteller :clicked?] [false false]) yield?])
 
 (s/defn init-explicit-choice
   [{:keys [storyteller state] :as screen} :- sc/Screen]
@@ -164,7 +169,8 @@
        (-> screen
            (init-dialogue-state)
            (mark-initialized)
-           (update-dialogue))
+           (update-dialogue)
+           (reset-clicked))
      (= :dummy (:type step))
        (do
          (.log js/console "Dummy step")
@@ -255,6 +261,8 @@
       (assoc-in [:state :backgrounds] '())
       (advance-step)))
 
+; TODO: Add an extra show-dialogue because show-ui is too generic and it messes
+;       up with the q.save/q.load and system menu options
 (s/defn show-ui
   [screen :- sc/Screen]
   (-> screen

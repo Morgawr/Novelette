@@ -153,6 +153,8 @@
                                                     {:type :dummy} 0 {} false)
                       :text-renderer (init-text-engine)
                       :GUI (novelette.GUI.canvas/create canvas ctx "black")})]
-    (ui/create-dialogue-panel screen)))
+    (-> screen
+        (ui/create-dialogue-panel)
+        (ui/init-story-ui identity identity)))) ; TODO - implement qload/qsave functions
 ; TODO - Find a way to properly pass user-provided init data to the canvas
 ; and other possible GUI elements. In this case it's the 'black' color.

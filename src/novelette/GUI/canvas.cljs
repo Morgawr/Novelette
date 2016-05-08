@@ -2,6 +2,7 @@
   (:require-macros [schema.core :as s])
   (:require [novelette.schemas :as sc]
             [schema.core :as s]
+            [novelette.GUI :as GUI]
             [novelette.render]))
 
 (s/defn render
@@ -13,6 +14,14 @@
   ;(novelette.render/fill-clear canvas ctx base-color )
   nil)
 
+(s/defn canvas-clicked
+  [element :- sc/GUIElement
+   screen :- sc/Screen]
+  ; If we reached this event it means that no other widget captured the clicked
+  ; event, so we just need to pass it down to the storyteller instead.
+  [(assoc-in screen [:storyteller :clicked?]
+            (get-in screen [:state :input-state :clicked?])) false])
+
 (s/defn create
   "Creates a new canvas GUI element with sane defaults."
   [canvas :- js/HTMLCanvasElement
@@ -21,7 +30,7 @@
   (let [content {:entity canvas
                  :context ctx
                  :base-color base-color}]
-    (sc/GUIElement. :canvas
+    (-> (sc/GUIElement. :canvas
                     :canvas ; id
                     [0 0 (.-width canvas) (.-height canvas)]
                     content
@@ -30,4 +39,5 @@
                     true ; focus
                     false ; hover
                     10000 ; very low priority in depth
-                    render)))
+                    render)
+        (GUI/add-event-listener :clicked canvas-clicked))))

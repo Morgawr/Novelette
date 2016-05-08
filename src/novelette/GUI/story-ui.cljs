@@ -30,7 +30,7 @@
    screen :- sc/Screen]
   [(assoc-in screen [:storyteller :state :choice] (:id element)) false])
 
-(s/defn mult-on-hover
+(s/defn on-hover
   [element :- sc/GUIElement
    screen :- sc/Screen]
   (let [on-hover-color-map (get-in element [:content :on-hover-color])]
@@ -40,7 +40,7 @@
                                merge on-hover-color-map)))
      false]))
 
-(s/defn mult-off-hover
+(s/defn off-hover
   [element :- sc/GUIElement
    screen :- sc/Screen]
   (let [off-hover-color-map (get-in element [:content :off-hover-color])]
@@ -49,7 +49,6 @@
          (#(GUI/update-element (:id element) % [:content]
                                merge off-hover-color-map)))
      false]))
-
 
 (s/defn add-multiple-choice-buttons
   [ids :- [sc/id]
@@ -66,10 +65,8 @@
                                  :font-size 20})
                               (GUI/add-event-listener :clicked
                                                       mult-clicked)
-                              (GUI/add-event-listener :on-hover
-                                                      mult-on-hover)
-                              (GUI/add-event-listener :off-hover
-                                                      mult-off-hover)))
+                              (GUI/add-event-listener :on-hover on-hover)
+                              (GUI/add-event-listener :off-hover off-hover)))
         offset-y 60
         starting-pos [160 80 310 50]]
     (loop [screen screen counter 0 opts ids]
@@ -103,3 +100,46 @@
                                                         :font-size 30})
                            :choice-panel-title %))
         (#(add-multiple-choice-buttons option-names %)))))
+
+(s/defn qsave-qload-clicked
+  [element :- sc/GUIElement
+   to-call-fn :- s/Keyword
+   screen :- sc/Screen]
+  (.log js/console (pr-str to-call-fn " clicked!"))
+  [((get-in element [:content to-call-fn]) screen) false])
+
+(s/defn init-story-ui
+  [{:keys [canvas context] :as screen} :- sc/Screen
+   qsave-fn :- sc/function
+   qload-fn :- sc/function]
+  (let [button-state {:bg-color "#FFFFFF" ; TODO - this is ugly, fix it
+                      :fg-color "#000000"
+                      :on-hover-color {:bg-color "#000000"
+                                       :fg-color "#FFFFFF"}
+                      :off-hover-color {:bg-color "#FFFFFF"
+                                        :fg-color "#000000"}
+                      :font-size 15}
+        width (.-width canvas)]
+    (->> screen
+         (GUI/add-element
+           (->
+             (novelette.GUI.button/create context :q-save "Q. Save"
+                                          [(- width 130) 5 60 20] 1
+                                          (assoc button-state
+                                                 :save-fn qsave-fn))
+             (GUI/add-event-listener :on-hover on-hover)
+             (GUI/add-event-listener :off-hover off-hover)
+             (GUI/add-event-listener :clicked #(qsave-qload-clicked
+                                                 %1 :save-fn %2)))
+           :canvas)
+         (GUI/add-element
+           (->
+             (novelette.GUI.button/create context :q-load "Q. Load"
+                                          [(- width 65) 5 60 20] 1
+                                          (assoc button-state
+                                                 :load-fn qload-fn))
+             (GUI/add-event-listener :on-hover on-hover)
+             (GUI/add-event-listener :off-hover off-hover)
+             (GUI/add-event-listener :clicked #(qsave-qload-clicked
+                                                 %1 :load-fn %2)))
+           :canvas))))
