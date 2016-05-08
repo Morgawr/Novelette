@@ -21,12 +21,14 @@
       :output-dir "runtime/js"
       :output-to  "runtime/js/novelette.js"
       :pretty-print true
+      :libs ["src-js/lzstr/lz-string.js"]
       :source-map "runtime/js/novelette.js.map"
       :closure-output-charset "US-ASCII"
       }}
     {:id "tests"
      :source-paths ["src/" "tests"]
      :compiler {:output-to "compiled-tests/tests.js"
+                :libs ["src-js/lzstr/lz-string.js"]
                 :optimizations :whitespace
                 :main "novelette.tests.runner"
                 :pretty-print true}}]})
