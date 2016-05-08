@@ -1,7 +1,8 @@
 (ns novelette.schemas
   (:require-macros [schema.core :as s])
   (:require [schema.core :as s]
-            [novelette-sprite.schemas :as scs]))
+            [novelette-sprite.schemas :as scs]
+            [cljs.reader]))
 
 ; This file contains all the schemas used by the Novelette VN engine so it can
 ; be easily referred from any namespace without dependency problems.
@@ -34,6 +35,8 @@
                      ; TODO add GUI to all screens and base data structure
                      ]
   {s/Any s/Any})
+(cljs.reader/register-tag-parser! "novelette.schemas.Screen"
+                                  map->Screen)
 
 ; TODO - purge a lot of old data and cruft
 
@@ -42,6 +45,8 @@
                     context :- js/CanvasRenderingContext2D ; TODO - maybe invert order of this and canvas for consistency
                     canvas :- js/HTMLCanvasElement]
   {s/Any s/Any})
+(cljs.reader/register-tag-parser! "novelette.schemas.State"
+                                  map->State)
 
 ; A GUIElement is the basic datatype used to handle GUI operations.
 (s/defrecord GUIElement [type :- s/Keyword; The element type.
@@ -55,6 +60,8 @@
                          z-index :- s/Int ; Depth of the Element in relation to its siblings. lower = front
                          render :- function ; Render function called on the element.
                          ])
+(cljs.reader/register-tag-parser! "novelette.schemas.GUIElement"
+                                  map->GUIElement)
 
 ; TODO - Move on-top and elapsed-time into the screen structure
 ; This is the storytelling state of the game. It is an object containing the whole set of
@@ -80,6 +87,8 @@
                          ;        to facilitate skipping of text.
                          ]
   {s/Any s/Any})
+(cljs.reader/register-tag-parser! "novelette.schemas.StoryState"
+                                  map->StoryState)
 
 (s/defrecord StoryTeller [runtime-hooks :- {s/Any s/Any} ; Map of runtime hooks to in-text macros
                           current-token :- {s/Any s/Any} ; Current token to parse.
@@ -88,5 +97,7 @@
                           first? :- s/Bool ; Is this the first frame for this state? TODO - I dislike this, I need a better option.
                           ]
   {s/Any s/Any})
+(cljs.reader/register-tag-parser! "novelette.schemas.StoryTeller"
+                                  map->StoryTeller)
 
 

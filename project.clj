@@ -5,7 +5,7 @@
                  [prismatic/schema "1.0.1"]
                  [lein-doo "0.1.6"]
                  [novelette-text "0.1.3"]
-                 [novelette-sprite "0.1.0.1"]]
+                 [novelette-sprite "0.1.0.2"]]
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-doo "0.1.6"]]
   :hooks [leiningen.cljsbuild]

@@ -13,6 +13,7 @@
             [novelette-sprite.render]
             [novelette-text.renderer :as text]
             [novelette.utils :as utils]
+            [novelette.storage :as storage]
             [clojure.string :as string]
             [schema.core :as s]))
 
@@ -135,6 +136,24 @@
                                         :font-style "bold"
                                         :color "white"})})
 
+
+(s/defn q-save
+  [screen :- sc/Screen]
+  (let [to-save {:state (:state screen)
+                 :storyteller (dissoc (:storyteller screen) :runtime-hooks)}]
+    (storage/save! to-save "quickslot"))
+  screen)
+
+; TODO - Implement restoring of music/bgm as it was during the save.
+; TODO - The multiple-choice options seem to be loaded in a different order, I need to investigate it
+(s/defn q-load
+  [screen :- sc/Screen]
+  (let [to-load (storage/load "quickslot")
+        new-storyteller (merge (:storyteller screen) (:storyteller to-load))]
+    (-> screen
+        (assoc :storyteller new-storyteller)
+        (assoc :state (:state to-load)))))
+
 (s/defn init
   [ctx :- js/CanvasRenderingContext2D
    canvas :- js/HTMLCanvasElement
@@ -155,6 +174,6 @@
                       :GUI (novelette.GUI.canvas/create canvas ctx "black")})]
     (-> screen
         (ui/create-dialogue-panel)
-        (ui/init-story-ui identity identity)))) ; TODO - implement qload/qsave functions
+        (ui/init-story-ui q-save q-load))))
 ; TODO - Find a way to properly pass user-provided init data to the canvas
 ; and other possible GUI elements. In this case it's the 'black' color.

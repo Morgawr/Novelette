@@ -105,7 +105,6 @@
   [element :- sc/GUIElement
    to-call-fn :- s/Keyword
    screen :- sc/Screen]
-  (.log js/console (pr-str to-call-fn " clicked!"))
   [((get-in element [:content to-call-fn]) screen) false])
 
 (s/defn init-story-ui
